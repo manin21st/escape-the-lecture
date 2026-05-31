@@ -163,6 +163,26 @@
     from { background: #c44545; }
     to   { background: #ff5050; }
   }
+  @media (max-width: 720px) {
+    body { padding: 8px 6px; }
+    #game-frame {
+      padding: 6px;
+      max-width: 100%;
+      width: 100%;
+      flex-shrink: 1;
+    }
+    #game-inner {
+      width: 100%;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto !important;
+    }
+    #bottom-hud {
+      font-size: 12px;
+      padding: 8px 10px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1571,6 +1591,10 @@ const config = {
   pixelArt: true,
   scene: [TitleScene, GameScene],
   render: { antialias: false, roundPixels: true },
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
 };
 document.fonts.load("16px 'NeoDunggeunmo'").then(() => {
   window._phaserGame = new Phaser.Game(config);
