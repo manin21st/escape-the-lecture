@@ -6,7 +6,15 @@
 <title>강의실 탈출 — Escape the Lecture</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Press+Start+2P&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  @font-face {
+    font-family: 'NeoDunggeunmo';
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+    src: url('https://cdn.jsdelivr.net/gh/neodgm/neodgm-webfont/neodgm/neodgm.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/gh/neodgm/neodgm-webfont/neodgm/neodgm.woff') format('woff');
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: linear-gradient(180deg, #fde8c4 0%, #f0d4a0 60%, #e8c690 100%);
@@ -15,18 +23,78 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    font-family: 'Gowun Dodum', sans-serif;
-    overflow: hidden;
-    padding: 20px 0;
+    font-family: 'NeoDunggeunmo', sans-serif;
+    overflow: auto;
+    padding: 20px 12px;
   }
-  #title-bar {
+  #page-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+  }
+  .side-panel {
+    width: 190px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #fdf5e4 0%, #f0e0c0 100%);
+    border: 3px solid #8b5a2b;
+    border-radius: 6px;
+    padding: 14px 12px;
+    box-shadow: 0 4px 16px rgba(60,30,10,0.25), inset 0 0 0 1px #c9a778;
+    font-family: 'NeoDunggeunmo', sans-serif;
+    font-size: 13px;
+    color: #4a2c1a;
+    line-height: 1.75;
+    align-self: stretch;
+  }
+  .side-panel h3 {
+    font-size: 14px;
+    color: #6b4423;
+    border-bottom: 2px solid #8b5a2b;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0 #fff5d8;
+  }
+  .key-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .key-badge {
+    background: #d4a574;
+    border: 2px solid #6b4423;
+    border-radius: 3px;
+    padding: 2px 5px;
+    font-size: 11px;
+    white-space: nowrap;
+    box-shadow: 0 1px 0 #6b4423;
+    flex-shrink: 0;
+    color: #3a1a0a;
+  }
+  .key-desc {
+    font-size: 12px;
     color: #5a3a1a;
-    font-family: 'Gowun Dodum', sans-serif;
-    font-size: 26px;
-    font-weight: bold;
-    margin-bottom: 12px;
-    text-shadow: 2px 2px 0 #fff5d8, 4px 4px 0 rgba(90,58,26,0.15);
-    letter-spacing: 3px;
+    line-height: 1.5;
+  }
+  .panel-body {
+    font-size: 12px;
+    color: #5a3a1a;
+    line-height: 1.65;
+    margin-bottom: 10px;
+  }
+  .panel-credit {
+    margin-top: 14px;
+    font-size: 11px;
+    color: #8b5a2b;
+    border-top: 1px solid #c9a778;
+    padding-top: 8px;
+  }
+  @media (max-width: 1100px) {
+    .side-panel { display: none; }
   }
   #game-frame {
     position: relative;
@@ -37,43 +105,13 @@
       0 10px 32px rgba(60,30,10,0.4),
       inset 0 0 0 2px #c9a778,
       inset 0 0 0 4px #6b4423;
+    flex-shrink: 0;
   }
   #game-inner {
     background: #f5ebd6;
     border: 3px solid #4a2c1a;
     border-radius: 4px;
     overflow: hidden;
-  }
-  #lecture-bar {
-    background:
-      linear-gradient(180deg, rgba(255,248,220,0.7) 0%, rgba(234,216,176,0.4) 100%),
-      #f8f0d8;
-    padding: 10px 16px;
-    border-bottom: 3px solid #8b5a2b;
-    font-family: 'Gowun Dodum', sans-serif;
-    font-size: 16px;
-    color: #4a2c1a;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 48px;
-  }
-  #prof-label {
-    background: #c44545;
-    color: #fff8e0;
-    font-size: 13px;
-    padding: 5px 11px;
-    border-radius: 4px;
-    font-weight: bold;
-    white-space: nowrap;
-    box-shadow: 0 2px 0 #8b2c2c;
-    flex-shrink: 0;
-  }
-  #lecture-text {
-    flex: 1;
-    color: #4a2c1a;
-    line-height: 1.4;
-    transition: opacity 0.4s ease;
   }
   canvas { display: block; image-rendering: pixelated; }
   #bottom-hud {
@@ -83,7 +121,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: 'Gowun Dodum', sans-serif;
+    font-family: 'NeoDunggeunmo', sans-serif;
     font-size: 14px;
     color: #3a1f0a;
     font-weight: bold;
@@ -125,34 +163,51 @@
     from { background: #c44545; }
     to   { background: #ff5050; }
   }
-  #hint-bar {
-    text-align: center;
-    margin-top: 12px;
-    color: #6b4423;
-    font-size: 13px;
-    font-family: 'Gowun Dodum', sans-serif;
-    text-shadow: 1px 1px 0 #fff5d8;
-    opacity: 0.85;
-  }
 </style>
 </head>
 <body>
-<div id="title-bar">📚 강의실 탈출 — Escape the Lecture 📚</div>
-<div id="game-frame">
-  <div id="game-inner">
-    <div id="lecture-bar">
-      <span id="prof-label">교수님</span>
-      <span id="lecture-text">강의실에 오신 것을 환영합니다.</span>
+<div id="page-wrapper">
+  <div class="side-panel" id="left-panel">
+    <h3>[조작법]</h3>
+    <div class="key-row">
+      <span class="key-badge">드래그</span>
+      <span class="key-desc">마우스 드래그로<br>이동 경로 지정</span>
     </div>
-    <div id="game-container"></div>
-    <div id="bottom-hud">
-      <div class="hud-pill" id="period-info">1교시</div>
-      <div id="phase-indicator">📖 칠판 보는 중</div>
-      <div class="hud-pill" id="exit-info">🚪 뒤쪽 문</div>
+    <div class="key-row">
+      <span class="key-badge">클릭</span>
+      <span class="key-desc">친구 클릭 →<br>교수님 질문 유도</span>
+    </div>
+    <div class="key-row">
+      <span class="key-badge">[문]</span>
+      <span class="key-desc">초록 출구로<br>탈출하면 성공!</span>
+    </div>
+    <div class="key-row">
+      <span class="key-badge">STOP</span>
+      <span class="key-desc">교수님이 돌아보면<br>반드시 멈춰야 함</span>
+    </div>
+    <div class="key-row">
+      <span class="key-badge">TA</span>
+      <span class="key-desc">2교시부터 조교 등장<br>시야(노란 삼각형) 주의</span>
     </div>
   </div>
+  <div id="game-frame">
+    <div id="game-inner">
+      <div id="game-container"></div>
+      <div id="bottom-hud">
+        <div class="hud-pill" id="period-info">1교시</div>
+        <div id="phase-indicator">[보드] 이동 가능</div>
+        <div class="hud-pill" id="exit-info">[문] 뒷쪽 출구</div>
+      </div>
+    </div>
+  </div>
+  <div class="side-panel" id="right-panel">
+    <h3>[Artist Statement]</h3>
+    <p class="panel-body">대학교 강의실에서 몰래 빠져나가려는 학생의 작은 모험.</p>
+    <p class="panel-body">들키지 않고 출구로 가는 retro pixel RPG.</p>
+    <p class="panel-body">교수님의 시선을 피하고, 친구의 도움을 받으며, 5교시를 모두 탈출하면 자유!</p>
+    <div class="panel-credit">— [학생 이름] 2026</div>
+  </div>
 </div>
-<div id="hint-bar">화면을 드래그해서 이동 · 친구를 클릭해 질문 유도 (2교시부터)</div>
 <script>
 // ════════════════════════════════════════════════════════
 // CONSTANTS
@@ -166,7 +221,6 @@ const H = ROWS * TILE;
 const T = { FLOOR:0, WALL:1, DESK:2, EXIT:3, PPT:4, PODIUM:5 };
 
 const PAL = {
-  // floor / walls
   floor:     0xd8b88a,
   floorAlt:  0xcaa97a,
   floorLine: 0xa87f55,
@@ -174,29 +228,24 @@ const PAL = {
   wallTop:   0xb58a5a,
   wallDark:  0x8b5a2b,
   wallShadow:0x6b4423,
-  // furniture
   deskWood:  0xa87042,
   deskTop:   0xd4a574,
   deskEdge:  0x6b4423,
   deskGrain: 0x8b5a2b,
   notebook:  0xf8f0d8,
   notebookLine: 0xa8b8c8,
-  // PPT screen
   pptFrame:  0x4a2c1a,
   pptScreen: 0xf8f4e0,
   pptHeader: 0xc44545,
   pptText:   0x4a6fa5,
   pptSub:    0x6a8aaa,
-  // podium
   podiumDark:0x6b4423,
   podiumTop: 0xa87042,
   podiumPaper:0xfff8e0,
-  // exit
   exitFrame: 0x5a3a1a,
   exitDoor:  0x6b8e4a,
   exitDoorL: 0x88aa66,
   exitHandle:0xe0c050,
-  // characters - professor
   profShirt: 0x4a6fa5,
   profShirtD:0x365080,
   profVest:  0x5a3a1a,
@@ -207,17 +256,14 @@ const PAL = {
   profHairD: 0x6a6a6a,
   profGlasses: 0x2c2c2c,
   profLens:  0xc8d8e8,
-  // player
   playerHoodie: 0xc08854,
   playerHoodieD:0x8b5a2b,
   playerSkin:   0xf0c89c,
   playerHair:   0x4a2c1a,
   playerBag:    0x6a4a2a,
-  // friend
   friendHoodie: 0x6aa8aa,
   friendHoodieD:0x4a8088,
   friendHair:   0x2a1a1a,
-  // generic students - hoodie palette
   studentColors: [
     0xa85a5a, 0x5a8aaa, 0x6aa86a, 0xa88a5a, 0x8a6aaa,
     0xaa8a3a, 0x5a6aaa, 0xa86aa8, 0x7a8a4a, 0xa8704a,
@@ -232,54 +278,37 @@ const PAL = {
 // DATA
 // ════════════════════════════════════════════════════════
 const PERIODS = {
-  1: { moveTime: 5.5, stopTime: 1.8, suspChance: 0,    friend: false, exitFront: false, label: '1교시 — 알고리즘 입문' },
-  2: { moveTime: 4.5, stopTime: 2.1, suspChance: 0,    friend: true,  exitFront: false, label: '2교시 — 자료구조' },
-  3: { moveTime: 3.8, stopTime: 2.4, suspChance: 0,    friend: true,  exitFront: false, label: '3교시 — 동적 프로그래밍' },
-  4: { moveTime: 3.2, stopTime: 2.6, suspChance: 0.30, friend: true,  exitFront: false, label: '4교시 — 그래프 이론' },
-  5: { moveTime: 3.0, stopTime: 2.4, suspChance: 0.30, friend: true,  exitFront: true,  label: '5교시 — 마지막 강의' },
+  1: { moveTime: 5.5, stopTime: 1.8, suspChance: 0,    friend: false, label: '1교시 — 알고리즘 입문' },
+  2: { moveTime: 4.5, stopTime: 2.1, suspChance: 0,    friend: true,  label: '2교시 — 자료구조' },
+  3: { moveTime: 3.8, stopTime: 2.4, suspChance: 0,    friend: true,  label: '3교시 — 동적 프로그래밍' },
+  4: { moveTime: 3.2, stopTime: 2.6, suspChance: 0.30, friend: true,  label: '4교시 — 그래프 이론' },
+  5: { moveTime: 3.0, stopTime: 2.4, suspChance: 0.30, friend: true,  label: '5교시 — 마지막 강의' },
 };
 
+// Exit tile positions per period (row, col) — each period has a different exit location
+const EXIT_POSITIONS = {
+  1: { row: 14, col: 17 }, // back right — easy, close to player start
+  2: { row: 14, col: 1  }, // back left — longer walk
+  3: { row: 7,  col: 1  }, // left aisle midway — need to cross TA row
+  4: { row: 7,  col: 18 }, // right aisle midway — opposite corner
+  5: { row: 3,  col: 18 }, // near front right — must traverse entire room
+};
+
+// TA patrol rows per period (aisle rows only)
+const TA_ROWS = {
+  2: [13],
+  3: [13, 10],
+  4: [13, 10, 7],
+  5: [13, 10, 7, 4],
+};
+
+// Sparse lecture lines shown during MOVE phase (long interval)
 const LECTURES = {
-  1: [
-    "자, 오늘은 알고리즘 기초부터 시작하겠습니다.",
-    "다음 슬라이드 넘어갈게요, 잘 보세요.",
-    "이 부분 시험에 나오니까 꼭 필기하세요.",
-    "Big-O 표기법, 외워두세요.",
-    "퀵소트는 평균 O(n log n)입니다.",
-    "여러분, 화면 잘 보이시죠?",
-  ],
-  2: [
-    "2교시 시작합니다. 집중해주세요.",
-    "스택은 LIFO, 큐는 FIFO. 기본입니다.",
-    "이번 과제 다음 주 수요일까지입니다.",
-    "졸지 마세요, 시험에 다 나옵니다.",
-    "여기, 이 부분이 정말 핵심입니다.",
-    "필기하세요, 다시 안 설명합니다.",
-  ],
-  3: [
-    "3교시! 오늘의 하이라이트입니다.",
-    "동적 프로그래밍, 어렵지만 중요합니다.",
-    "메모이제이션과 타뷸레이션, 차이 아시죠?",
-    "이 문제 같이 풀어봅시다.",
-    "다음 주 발표 준비하세요.",
-    "이거 못 풀면 학점 안 나옵니다.",
-  ],
-  4: [
-    "4교시 시작합니다. 끝나면 쉬는 시간이에요.",
-    "그래프 이론, 오늘의 핵심입니다.",
-    "BFS, DFS 차이 아시는 분?",
-    "다익스트라, 외우세요. 시험 단골입니다.",
-    "조용히 들어주세요.",
-    "여기 헷갈리면 답 못 맞춰요.",
-  ],
-  5: [
-    "마지막 교시입니다. 조금만 더 집중하세요.",
-    "기말고사 범위, 지금부터 정리합니다.",
-    "이거 외우면 만점입니다.",
-    "다들 졸리시죠? 저도 그래요.",
-    "마지막 슬라이드, 곧 끝납니다.",
-    "이번 학기 마지막 강의예요.",
-  ],
+  1: ["오늘은 알고리즘 기초부터 시작합니다.", "화면을 잘 보세요."],
+  2: ["2교시 시작합니다.", "집중해주세요."],
+  3: ["동적 프로그래밍 시작합니다.", "메모이제이션, 중요합니다."],
+  4: ["그래프 이론 시작합니다.", "BFS, DFS 차이 아시죠?"],
+  5: ["마지막 강의입니다.", "기말고사 범위 정리합니다."],
 };
 
 const FRIEND_QUESTIONS = [
@@ -298,12 +327,25 @@ const PROF_ANSWERS = [
   "잠시만, 다음 슬라이드에서 다룹니다.",
 ];
 
+const WATCH_LINES = [
+  "잠깐, 조용히 해주세요.",
+  "자, 다들 집중!",
+  "이 부분 중요합니다.",
+  "여러분, 이쪽 보세요.",
+];
+
 const SUSPICION_LINES = [
   "거기, 뒤에 누가 일어났어요?!",
   "어, 학생, 어디 가는 거예요?",
   "수업 중에 어딜 가요!",
   "잠깐, 거기 멈춰요!",
   "출석 점수 깎입니다!",
+];
+
+const EXIT_PROXIMITY_LINES = [
+  "어이 학생, 어디 가요?",
+  "거기... 혹시 나가려고요?",
+  "뒤에 누구 일어섰나요?",
 ];
 
 const CAUGHT_LINES = [
@@ -324,41 +366,57 @@ const WIN_LINES = {
 
 // NPC seats — student tiles per row
 const NPC_SEATS = [
-  // back row 1 (row 6, in front of desk row 5)
   [2,6],[3,6],[5,6],[6,6],[8,6],[9,6],[11,6],[12,6],[14,6],[15,6],
-  // middle row 2 (row 9)
   [2,9],[3,9],[5,9],[6,9],[8,9],[9,9],[11,9],[12,9],[14,9],[15,9],
-  // back row 3 (row 12) — player at col 2, friend at col 3
   [5,12],[6,12],[8,12],[9,12],[11,12],[12,12],[14,12],[15,12],
 ];
 const PLAYER_SEAT = [2, 12];
 const FRIEND_SEAT = [3, 12];
 
-// Base layout (one large lecture hall)
+// Build grid with exit at period-specific position
 function buildGrid(period) {
   const g = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,4,4,4,4,4,4,4,4,4,4,0,5,5,5,0,0,0,1], // PPT screen + podium row
-    [1,0,4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,1], // PPT continues, prof stands at podium
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], // open floor between front & desks
-    [1,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,1], // desk row 1
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], // students sit
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], // aisle
-    [1,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,1], // desk row 2
+    [1,0,4,4,4,4,4,4,4,4,4,4,0,5,5,5,0,0,0,1],
+    [1,0,4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,1], // desk row 3
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], // player & friend row
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], // back aisle
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,1], // back exit
+    [1,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   ];
-  if (period === 5) {
-    g[14][17] = T.FLOOR;
-    g[4][17]  = T.EXIT;   // exit moves up near the front
-  }
+  const ep = EXIT_POSITIONS[period] || EXIT_POSITIONS[1];
+  g[ep.row][ep.col] = T.EXIT;
   return g;
+}
+
+// ════════════════════════════════════════════════════════
+// PIXEL ART HELPERS
+// ════════════════════════════════════════════════════════
+function drawPixelHeart(g, x, y, color, s) {
+  s = s || 2;
+  const p = [
+    [0,1,1,0,1,1,0],
+    [1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1],
+    [0,1,1,1,1,1,0],
+    [0,0,1,1,1,0,0],
+    [0,0,0,1,0,0,0],
+  ];
+  g.fillStyle(color);
+  for (let py = 0; py < p.length; py++) {
+    for (let px2 = 0; px2 < p[py].length; px2++) {
+      if (p[py][px2]) g.fillRect(x + px2 * s, y + py * s, s, s);
+    }
+  }
 }
 
 // ════════════════════════════════════════════════════════
@@ -372,12 +430,11 @@ function generateTextures(scene) {
   g.fillStyle(PAL.floorAlt); g.fillRect(0,0,TILE,2);
   g.fillStyle(PAL.floorLine);
   g.fillRect(0,16,TILE,1);
-  // grain dots
   g.fillRect(6,5,1,1); g.fillRect(20,8,1,1); g.fillRect(11,22,1,1); g.fillRect(26,26,1,1);
   g.fillRect(2,12,1,1); g.fillRect(15,28,1,1); g.fillRect(28,18,1,1);
   g.generateTexture('floor', TILE, TILE); g.clear();
 
-  // ─── FLOOR ALT (for checkered) ───
+  // ─── FLOOR ALT ───
   g.fillStyle(PAL.floorAlt); g.fillRect(0,0,TILE,TILE);
   g.fillStyle(PAL.floor); g.fillRect(0,0,TILE,2);
   g.fillStyle(PAL.floorLine);
@@ -390,37 +447,31 @@ function generateTextures(scene) {
   g.fillStyle(PAL.wallTop); g.fillRect(0,0,TILE,8);
   g.fillStyle(PAL.wallDark); g.fillRect(0,7,TILE,1);
   g.fillStyle(PAL.wallShadow); g.fillRect(0,TILE-3,TILE,3);
-  // brick-ish vertical hints
   g.fillStyle(0xd8c090); g.fillRect(0,12,TILE,1); g.fillRect(0,22,TILE,1);
   g.generateTexture('wall', TILE, TILE); g.clear();
 
-  // ─── DESK (long top, vertical sides) ───
+  // ─── DESK ───
   g.fillStyle(PAL.deskWood); g.fillRect(0,0,TILE,TILE);
   g.fillStyle(PAL.deskTop);  g.fillRect(0,0,TILE,18);
   g.fillStyle(PAL.deskGrain); g.fillRect(0,6,TILE,1); g.fillRect(0,12,TILE,1);
   g.fillStyle(PAL.deskEdge); g.fillRect(0,17,TILE,2);
   g.fillStyle(PAL.deskEdge); g.fillRect(0,TILE-3,TILE,3);
-  // little notebook on top
   g.fillStyle(PAL.notebook); g.fillRect(6,4,12,9);
   g.fillStyle(PAL.notebookLine);
   g.fillRect(8,6,8,1); g.fillRect(8,8,7,1); g.fillRect(8,10,9,1);
-  // pencil
   g.fillStyle(0xe0c060); g.fillRect(20,5,8,1);
   g.fillStyle(0x8b4513); g.fillRect(27,5,2,1);
   g.generateTexture('desk', TILE, TILE); g.clear();
 
-  // ─── PPT SCREEN tile (designed to tile) ───
+  // ─── PPT SCREEN ───
   g.fillStyle(PAL.pptFrame); g.fillRect(0,0,TILE,TILE);
   g.fillStyle(PAL.pptScreen); g.fillRect(0,2,TILE,TILE-4);
   g.fillStyle(PAL.pptHeader); g.fillRect(2,4,TILE-4,2);
   g.fillStyle(PAL.pptText);
-  g.fillRect(2,9,TILE-6,1);
-  g.fillRect(2,13,TILE-10,1);
-  g.fillRect(2,17,TILE-8,1);
-  g.fillRect(2,21,TILE-12,1);
+  g.fillRect(2,9,TILE-6,1); g.fillRect(2,13,TILE-10,1);
+  g.fillRect(2,17,TILE-8,1); g.fillRect(2,21,TILE-12,1);
   g.fillStyle(PAL.pptSub);
   g.fillRect(2,25,TILE-14,1);
-  // bottom frame shadow
   g.fillStyle(0x2a1a08); g.fillRect(0,TILE-2,TILE,2);
   g.generateTexture('ppt', TILE, TILE); g.clear();
 
@@ -442,23 +493,22 @@ function generateTextures(scene) {
   g.fillStyle(0x4a6a30); g.fillRect(5,15,TILE-10,1);
   g.fillStyle(PAL.exitHandle); g.fillRect(TILE-10,15,3,3);
   g.fillStyle(0x8a7530); g.fillRect(TILE-10,17,3,1);
-  // EXIT sign top
   g.fillStyle(0x88cc44); g.fillRect(6,0,TILE-12,3);
   g.generateTexture('exit', TILE, TILE); g.clear();
 
-  // ─── PROFESSOR FRONT (looking at students) ───
+  // ─── PROFESSOR FRONT ───
   drawProfessor(g, true);
   g.generateTexture('profFront', TILE, TILE); g.clear();
 
-  // ─── PROFESSOR BACK (facing PPT) ───
+  // ─── PROFESSOR BACK ───
   drawProfessor(g, false);
   g.generateTexture('profBack', TILE, TILE); g.clear();
 
-  // ─── PROFESSOR SUSPICIOUS (angry red) ───
+  // ─── PROFESSOR SUSPICIOUS ───
   drawProfessor(g, true, true);
   g.generateTexture('profAngry', TILE, TILE); g.clear();
 
-  // ─── PLAYER (sitting / walking) ───
+  // ─── PLAYER ───
   drawStudent(g, {
     hoodie: PAL.playerHoodie, hoodieD: PAL.playerHoodieD,
     skin: PAL.playerSkin, hair: PAL.playerHair,
@@ -466,7 +516,7 @@ function generateTextures(scene) {
   });
   g.generateTexture('player', TILE, TILE); g.clear();
 
-  // ─── FRIEND (next to player) ───
+  // ─── FRIEND ───
   drawStudent(g, {
     hoodie: PAL.friendHoodie, hoodieD: PAL.friendHoodieD,
     skin: PAL.playerSkin, hair: PAL.friendHair,
@@ -474,7 +524,7 @@ function generateTextures(scene) {
   });
   g.generateTexture('friend', TILE, TILE); g.clear();
 
-  // ─── FRIEND with hand raised ───
+  // ─── FRIEND hand raised ───
   drawStudent(g, {
     hoodie: PAL.friendHoodie, hoodieD: PAL.friendHoodieD,
     skin: PAL.playerSkin, hair: PAL.friendHair,
@@ -482,6 +532,14 @@ function generateTextures(scene) {
     handUp: true,
   });
   g.generateTexture('friendHand', TILE, TILE); g.clear();
+
+  // ─── TA (Teaching Assistant) — red hoodie ───
+  drawStudent(g, {
+    hoodie: 0x8b3030, hoodieD: 0x5a1a1a,
+    skin: PAL.playerSkin, hair: 0x1a1a1a,
+    hasBag: false,
+  });
+  g.generateTexture('ta', TILE, TILE); g.clear();
 
   // ─── STUDENT NPCs (10 variants) ───
   for (let i = 0; i < 10; i++) {
@@ -505,22 +563,17 @@ function shade(hex, amt) {
 }
 
 function drawProfessor(g, facingFront, angry = false) {
-  // hair (grey)
   g.fillStyle(PAL.profHair);
   g.fillRect(8, 1, 16, 6);
   g.fillRect(7, 3, 18, 4);
-  // head/skin
   g.fillStyle(PAL.profSkin);
   g.fillRect(9, 5, 14, 11);
-  // hair sides
   g.fillStyle(PAL.profHair);
   g.fillRect(8, 5, 2, 7);
   g.fillRect(22, 5, 2, 7);
-  // hair top hint
   g.fillStyle(PAL.profHairD);
   g.fillRect(8, 1, 16, 2);
   if (facingFront) {
-    // glasses
     g.fillStyle(PAL.profGlasses);
     g.fillRect(10, 9, 5, 4);
     g.fillRect(17, 9, 5, 4);
@@ -528,57 +581,45 @@ function drawProfessor(g, facingFront, angry = false) {
     g.fillStyle(PAL.profLens);
     g.fillRect(11, 10, 3, 2);
     g.fillRect(18, 10, 3, 2);
-    // eyes behind glasses (angry slits if mad)
     g.fillStyle(angry ? 0xc44545 : 0x1a1a1a);
     g.fillRect(12, 11, 1, 1);
     g.fillRect(19, 11, 1, 1);
-    // mouth
     g.fillStyle(angry ? 0x8b2c2c : 0x6b4423);
     if (angry) g.fillRect(13, 14, 6, 1);
     else g.fillRect(14, 14, 4, 1);
-    // small face shading
     g.fillStyle(PAL.profSkinD);
     g.fillRect(9, 13, 2, 2);
     g.fillRect(21, 13, 2, 2);
   } else {
-    // back of head - just grey hair fully
     g.fillStyle(PAL.profHair);
     g.fillRect(9, 5, 14, 10);
     g.fillStyle(PAL.profHairD);
     g.fillRect(9, 5, 14, 3);
-    // ear hint
     g.fillStyle(PAL.profSkin);
     g.fillRect(8, 9, 1, 3);
     g.fillRect(23, 9, 1, 3);
   }
-  // neck
   g.fillStyle(PAL.profSkin);
   g.fillRect(13, 16, 6, 2);
-  // shirt collar
   g.fillStyle(0xfafafa);
   g.fillRect(11, 17, 10, 2);
   g.fillRect(14, 18, 4, 2);
-  // shirt body
   g.fillStyle(angry ? 0xc44545 : PAL.profShirt);
   g.fillRect(7, 19, 18, 8);
   g.fillStyle(angry ? 0x8b2c2c : PAL.profShirtD);
   g.fillRect(7, 19, 18, 2);
   g.fillRect(7, 25, 18, 2);
-  // vest / tie
   g.fillStyle(PAL.profVest);
   g.fillRect(15, 19, 2, 7);
-  // arms
   g.fillStyle(angry ? 0xc44545 : PAL.profShirt);
   g.fillRect(3, 20, 4, 6);
   g.fillRect(25, 20, 4, 6);
   g.fillStyle(PAL.profSkin);
   g.fillRect(3, 25, 4, 2);
   g.fillRect(25, 25, 4, 2);
-  // pants/legs
   g.fillStyle(PAL.profPants);
   g.fillRect(9, 27, 6, 5);
   g.fillRect(17, 27, 6, 5);
-  // shoes
   g.fillStyle(0x1a1a1a);
   g.fillRect(8, 30, 7, 2);
   g.fillRect(17, 30, 7, 2);
@@ -586,44 +627,33 @@ function drawProfessor(g, facingFront, angry = false) {
 
 function drawStudent(g, opts) {
   const { hoodie, hoodieD, skin, hair, hasBag, handUp } = opts;
-  // hair top
   g.fillStyle(hair);
   g.fillRect(9, 2, 14, 7);
   g.fillRect(8, 4, 16, 5);
-  // skin/face
   g.fillStyle(skin);
   g.fillRect(10, 7, 12, 9);
-  // ears
   g.fillStyle(skin);
   g.fillRect(8, 10, 2, 3);
   g.fillRect(22, 10, 2, 3);
-  // hair side bangs
   g.fillStyle(hair);
   g.fillRect(9, 7, 2, 3);
   g.fillRect(21, 7, 2, 3);
-  // eyes
   g.fillStyle(0x1a1a1a);
   g.fillRect(12, 11, 2, 2);
   g.fillRect(18, 11, 2, 2);
-  // tiny mouth
   g.fillStyle(0x6b4423);
   g.fillRect(15, 14, 2, 1);
-  // neck
   g.fillStyle(skin);
   g.fillRect(13, 16, 6, 2);
-  // hoodie body
   g.fillStyle(hoodie);
   g.fillRect(6, 17, 20, 10);
   g.fillStyle(hoodieD);
   g.fillRect(6, 17, 20, 2);
-  // hoodie strings
   g.fillStyle(0xf0e0c0);
   g.fillRect(15, 19, 1, 4);
   g.fillRect(17, 19, 1, 4);
-  // arms (raised hand?)
   g.fillStyle(hoodie);
   if (handUp) {
-    // right arm raised straight up
     g.fillRect(22, 8, 4, 11);
     g.fillStyle(skin);
     g.fillRect(22, 5, 4, 4);
@@ -637,18 +667,15 @@ function drawStudent(g, opts) {
   if (!handUp) {
     g.fillRect(25, 25, 4, 2);
   }
-  // bag (player only)
   if (hasBag) {
     g.fillStyle(PAL.playerBag);
     g.fillRect(24, 18, 5, 8);
     g.fillStyle(0x3a2010);
     g.fillRect(24, 18, 5, 2);
   }
-  // pants / sitting legs
   g.fillStyle(0x2a3a5a);
   g.fillRect(8, 27, 6, 5);
   g.fillRect(18, 27, 6, 5);
-  // shoes
   g.fillStyle(0x1a1a1a);
   g.fillRect(7, 30, 7, 2);
   g.fillRect(18, 30, 7, 2);
@@ -661,39 +688,33 @@ class TitleScene extends Phaser.Scene {
   constructor() { super('TitleScene'); }
   create() {
     const cx = W/2, cy = H/2;
-    // cozy parchment background
     this.add.rectangle(cx, cy, W, H, 0xf5ebd6);
-    // subtle wood grain
     const gg = this.add.graphics();
     for (let y = 0; y < H; y += 18) {
       gg.lineStyle(1, 0xe0d2b0, 0.6);
       gg.lineBetween(0, y, W, y);
     }
 
-    // little school doodles around the title
-    this.drawDoodle(80, 110, 0xc44545);   // apple
-    this.drawDoodle(W-80, 110, 0x4a6fa5); // book
+    this.drawDoodle(80, 110, 0xc44545);
+    this.drawDoodle(W-80, 110, 0x4a6fa5);
     this.drawBook(120, H-100);
     this.drawApple(W-120, H-110);
 
-    // Big title (Korean)
     this.add.text(cx, cy-150, '강의실 탈출', {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '64px',
       color: '#5a3a1a',
       stroke: '#fff5d8',
       strokeThickness: 6,
     }).setOrigin(0.5);
 
-    // English subtitle
     this.add.text(cx, cy-90, 'ESCAPE THE LECTURE', {
       fontFamily: "'Press Start 2P', monospace",
       fontSize: '14px',
       color: '#8b5a2b',
     }).setOrigin(0.5);
 
-    // Instructions panel — parchment
-    const panel = this.add.rectangle(cx, cy+25, 480, 170, 0xfff8e0, 1)
+    this.add.rectangle(cx, cy+25, 480, 170, 0xfff8e0, 1)
       .setStrokeStyle(3, 0x8b5a2b);
     this.add.rectangle(cx, cy+25, 480, 170)
       .setStrokeStyle(1, 0xc9a778)
@@ -701,29 +722,28 @@ class TitleScene extends Phaser.Scene {
       .setScale(0.96, 0.94);
 
     this.add.text(cx, cy-30, '몰래 강의실을 빠져나가자', {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '22px',
       color: '#8b2c2c',
     }).setOrigin(0.5);
 
     this.add.text(cx, cy+30, [
-      '🟢  교수님이 칠판 볼 때 = 이동',
-      '🔴  교수님이 돌아보면 = 멈춰!',
-      '🤝  2교시부터 친구 클릭 → 질문 유도',
-      '🚪  뒷문(또는 앞문)으로 탈출!',
+      '[초록] 교수님이 칠판 볼 때 = 이동',
+      '[빨강] 교수님이 돌아보면 = 멈춰!',
+      '[친구] 2교시부터 클릭 → 질문 유도',
+      '[문]  뒷문(또는 앞문)으로 탈출!',
     ], {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '17px',
       color: '#4a2c1a',
       align: 'center',
       lineSpacing: 8,
     }).setOrigin(0.5);
 
-    // Start button — cozy wooden
     const btn = this.add.rectangle(cx, cy+150, 260, 52, 0x6ba85a)
       .setStrokeStyle(4, 0x4a7a3a);
     this.add.text(cx, cy+150, '강의실 입장', {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '24px',
       color: '#fff8e0',
       fontStyle: 'bold',
@@ -739,8 +759,7 @@ class TitleScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(500, 245, 230, 200);
 
-    // small credit
-    this.add.text(cx, H-22, 'v2 · cozy edition', {
+    this.add.text(cx, H-22, 'v1 · cozy edition', {
       fontFamily: "'Press Start 2P', monospace",
       fontSize: '8px',
       color: '#a87042',
@@ -789,23 +808,20 @@ class GameScene extends Phaser.Scene {
     this.cfg = PERIODS[this.period];
     this.grid = buildGrid(this.period);
 
-    // State
     this.isDead       = false;
     this.hasWon       = false;
-    this.canMove      = true;       // true during MOVE/DISTRACTED
-    this.profLooking  = false;      // true during STOP/SUSPICION
-    this.phase        = 'move';     // 'move' | 'stop' | 'distract' | 'suspicion'
+    this.canMove      = true;
+    this.profLooking  = false;
+    this.phase        = 'move';
     this.phaseTimer   = 0;
     this.phaseTotal   = this.cfg.moveTime;
-    this.graceTimer   = 0;          // brief grace at STOP onset
+    this.graceTimer   = 0;
     this.gracePeriod  = 0.35;
     this.inGrace      = false;
 
-    // Friend mechanic
     this.friendUsedThisPeriod = false;
     this.friendCooldown       = 0;
 
-    // Player drag path
     this.dragPath     = [];
     this.isDragging   = false;
     this.lastDragTile = { x: PLAYER_SEAT[0], y: PLAYER_SEAT[1] };
@@ -813,32 +829,26 @@ class GameScene extends Phaser.Scene {
     this.playerTileY  = PLAYER_SEAT[1];
     this.playerMoving = false;
 
-    // Lecture text
-    this.lectureLines    = LECTURES[this.period] || LECTURES[1];
-    this.lectureIdx      = 0;
-    this.lectureTimer    = 0;
-    this.lectureInterval = 4.5;
 
+    this.exitProximityShown = false;
     this.bobTick = 0;
 
-    // Build
     this.buildMap();
     this.spawnNPCs();
     this.spawnPlayer();
     this.spawnProfessor();
+    this.spawnTAs();
     this.buildBannerOverlay();
     this.setupInput();
+    this.buildHUDHearts();
 
-    // HUD
+    // HUD labels
     document.getElementById('period-info').textContent = this.period + '교시';
-    document.getElementById('exit-info').textContent = this.cfg.exitFront ? '🚪 앞쪽 문!' : '🚪 뒷쪽 문';
+    const ep = EXIT_POSITIONS[this.period];
+    const exitLabel = ep.row <= 4 ? '[문] 앞쪽 출구!' : ep.row <= 9 ? '[문] 옆쪽 출구' : '[문] 뒷쪽 출구';
+    document.getElementById('exit-info').textContent = exitLabel;
 
-    this.updateLectureBar(this.lectureLines[0]);
-
-    // Period intro banner
     this.showIntroBanner();
-
-    // Start first phase
     this.enterMovePhase(true);
   }
 
@@ -858,7 +868,6 @@ class GameScene extends Phaser.Scene {
         if (t === T.EXIT) {
           img.setDepth(1);
           this.tweens.add({ targets: img, alpha: 0.7, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-          // sparkles
           for (let i = 0; i < 3; i++) {
             const s = this.add.rectangle(
               c*TILE + TILE/2 + Phaser.Math.Between(-8,8),
@@ -882,7 +891,6 @@ class GameScene extends Phaser.Scene {
         ty*TILE + TILE/2 - 2,
         'npc' + (i % 10)
       ).setDepth(5);
-      // very subtle bob (writing)
       this.tweens.add({
         targets: npc,
         y: npc.y + 1,
@@ -894,7 +902,6 @@ class GameScene extends Phaser.Scene {
       this.npcs.push(npc);
     }
 
-    // Friend NPC (only from P2)
     if (this.cfg.friend) {
       const [fx, fy] = FRIEND_SEAT;
       this.friendSprite = this.add.image(fx*TILE + TILE/2, fy*TILE + TILE/2 - 2, 'friend').setDepth(5);
@@ -903,17 +910,15 @@ class GameScene extends Phaser.Scene {
         if (evt) evt.stopPropagation();
         this.tryAskFriend();
       });
-      // hint glow
       this.tweens.add({
         targets: this.friendSprite,
         scaleX: 1.06, scaleY: 1.06,
         duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
       });
-      // small "?" hint above friend
       this.friendHint = this.add.text(
         fx*TILE + TILE/2, fy*TILE - 8, '?',
         {
-          fontFamily: "'Gowun Dodum', sans-serif",
+          fontFamily: "'NeoDunggeunmo', sans-serif",
           fontSize: '16px', color: '#6aa8aa',
           fontStyle: 'bold',
         }
@@ -937,7 +942,6 @@ class GameScene extends Phaser.Scene {
   }
 
   spawnProfessor() {
-    // professor stands at podium area (row 3, around col 14)
     const px = 14 * TILE + TILE/2;
     const py = 3  * TILE + TILE/2;
     this.profPos = { x: px, y: py };
@@ -946,20 +950,44 @@ class GameScene extends Phaser.Scene {
     this.profBubble = null;
   }
 
+  // ─── TAs ─────────────────────────────────────────
+  spawnTAs() {
+    this.tas = [];
+    const rows = TA_ROWS[this.period] || [];
+    rows.forEach((row, i) => {
+      const startDir = i % 2 === 0 ? 1 : -1;
+      const startCol = i % 2 === 0 ? 3 + (i * 2) : 16 - (i * 2);
+      const ta = {
+        row,
+        col: Math.max(1, Math.min(18, startCol)),
+        dir: startDir,
+        speed: 2.5,
+        sprite: null,
+        coneGfx: null,
+      };
+      ta.sprite = this.add.image(
+        ta.col * TILE + TILE/2,
+        row * TILE + TILE/2 - 2,
+        'ta'
+      ).setDepth(5.5);
+      ta.sprite.setFlipX(startDir === -1);
+      ta.coneGfx = this.add.graphics().setDepth(5.2);
+      this.tas.push(ta);
+    });
+  }
+
   // ─── BANNER ──────────────────────────────────────
   buildBannerOverlay() {
-    // Large center banner text — big MOVE / STOP / DISTRACTED
     this.bannerBg = this.add.rectangle(W/2, 90, 280, 70, 0xffffff, 0.0)
       .setDepth(20).setStrokeStyle(4, 0xffffff, 0.0);
     this.bannerText = this.add.text(W/2, 90, '', {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '46px', color: '#ffffff',
       stroke: '#000000', strokeThickness: 5, fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(21).setAlpha(0);
 
-    // Intro mini-banner (period label) — drawn briefly
     this.introTextObj = this.add.text(W/2, H/2, '', {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '38px', color: '#fff8e0',
       stroke: '#5a3a1a', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(25).setAlpha(0);
@@ -1000,16 +1028,33 @@ class GameScene extends Phaser.Scene {
     });
   }
 
+  // ─── PIXEL HEART HUD ─────────────────────────────
+  buildHUDHearts() {
+    if (!this.cfg.friend) return;
+    this.heartGfx = this.add.graphics().setDepth(15);
+    this.heartLabel = this.add.text(10, H - 30, 'Friend Help', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '10px', color: '#3a1f0a',
+    }).setOrigin(0, 0).setDepth(15);
+    this.updateHUDHearts();
+  }
+
+  updateHUDHearts() {
+    if (!this.heartGfx) return;
+    this.heartGfx.clear();
+    const used = this.friendUsedThisPeriod;
+    const color = used ? 0x888888 : 0xc44545;
+    drawPixelHeart(this.heartGfx, 96, H - 27, color, 2);
+  }
+
   // ─── INPUT ───────────────────────────────────────
   setupInput() {
     this.input.on('pointerdown', (ptr) => {
       if (this.isDead || this.hasWon) return;
-      // Caught if user clicks during STOP/SUSPICION (after grace)
       if (!this.canMove && !this.inGrace) {
         this.triggerGameOver('move');
         return;
       }
-      // Don't start drag during grace either
       if (!this.canMove && this.inGrace) return;
       this.isDragging = true;
       this.dragPath = [];
@@ -1019,7 +1064,6 @@ class GameScene extends Phaser.Scene {
     this.input.on('pointermove', (ptr) => {
       if (!this.isDragging || this.isDead || this.hasWon) return;
       if (!this.canMove) {
-        // mid-drag detected during STOP — caught (only after grace ends)
         if (!this.inGrace) {
           this.dragPath = [];
           this.isDragging = false;
@@ -1082,7 +1126,6 @@ class GameScene extends Phaser.Scene {
     this.removeProfBubble();
     if (!initial) {
       this.showBigBanner('MOVE!', '#ffffff', 0x4a8a3a);
-      this.nextLectureLine();
     }
   }
 
@@ -1101,28 +1144,29 @@ class GameScene extends Phaser.Scene {
 
     if (suspicion) {
       const line = SUSPICION_LINES[Phaser.Math.Between(0, SUSPICION_LINES.length - 1)];
-      this.updateLectureBar(line);
       this.showProfBubble(line, 0xc44545);
-      // red screen flash
       this.cameras.main.flash(250, 200, 40, 40, false);
+    } else {
+      // WATCH mode — professor faces class
+      const line = WATCH_LINES[Phaser.Math.Between(0, WATCH_LINES.length - 1)];
+      this.showProfBubble(line, 0x4a6fa5, 2800);
     }
   }
 
   enterDistractPhase() {
     this.phase = 'distract';
-    this.phaseTotal = this.cfg.moveTime * 1.4; // longer safe window
+    this.phaseTotal = this.cfg.moveTime * 1.4;
     this.phaseTimer = 0;
     this.canMove = true;
     this.profLooking = false;
     this.inGrace = false;
 
-    this.profSprite.setTexture('profFront'); // turned to friend
+    this.profSprite.setTexture('profFront');
     this.profSprite.setFlipX(false);
     this.setPhaseUI('distract');
     this.showBigBanner('CHANCE!', '#ffffff', 0xe8a445);
 
     const ans = PROF_ANSWERS[Phaser.Math.Between(0, PROF_ANSWERS.length - 1)];
-    this.updateLectureBar(ans);
     this.showProfBubble(ans, 0xe8a445);
   }
 
@@ -1130,35 +1174,65 @@ class GameScene extends Phaser.Scene {
     const el = document.getElementById('phase-indicator');
     el.classList.remove('stop', 'distract', 'suspicion');
     if (phase === 'move') {
-      el.textContent = '📖 칠판 보는 중 — MOVE';
+      el.textContent = '[보드] 칠판 보는 중 — MOVE';
     } else if (phase === 'stop') {
-      el.textContent = '👁 학생 보는 중 — STOP!';
+      el.textContent = '[감시] 학생 보는 중 — STOP!';
       el.classList.add('stop');
     } else if (phase === 'distract') {
-      el.textContent = '🤝 친구가 질문 중 — MOVE!';
+      el.textContent = '[질문] 친구 질문 중 — MOVE!';
       el.classList.add('distract');
     } else if (phase === 'suspicion') {
-      el.textContent = '⚠️ 의심 중 — 절대 멈춰!';
+      el.textContent = '[의심] 의심 중 — 절대 멈춰!';
       el.classList.add('suspicion');
     }
   }
 
-  showProfBubble(text, borderColor) {
+  showProfBubble(text, borderColor, autoDismissMs) {
     this.removeProfBubble();
-    const bx = this.profPos.x - 60;
-    const by = this.profPos.y - 42;
+    const BORDER = 0x3a1f0a;
+    const CREAM  = 0xfff8e0;
+    const bw = 224, bh = 62;
+    const border = 5;
+    // Position bubble above professor's head
+    // profPos.y ≈ 112; head is ~24px above center → place bubble 76px above center
+    const bx = this.profPos.x;
+    const by = this.profPos.y - 76 - bh / 2;
     const bubble = this.add.container(bx, by).setDepth(22);
-    const bg = this.add.rectangle(0, 0, 210, 36, 0xfff8e0, 1)
-      .setStrokeStyle(2, borderColor);
-    const txt = this.add.text(0, 0, text, {
-      fontFamily: "'Gowun Dodum', sans-serif",
-      fontSize: '13px', color: '#3a1f0a', align: 'center',
-      wordWrap: { width: 195 },
+    const g = this.add.graphics();
+
+    // Pixel border rect (dark brown)
+    g.fillStyle(BORDER);
+    g.fillRect(-bw/2, -bh/2, bw, bh);
+    // Cream fill inside border
+    g.fillStyle(CREAM);
+    g.fillRect(-bw/2 + border, -bh/2 + border, bw - border*2, bh - border*2);
+
+    // Tail: downward-pointing triangle at bottom-center, pointing toward prof head
+    const tailW = 14, tailH = 16;
+    const tailX = 0, tailY = bh / 2;
+    // Border triangle (dark)
+    g.fillStyle(BORDER);
+    g.fillTriangle(tailX - tailW/2 - 1, tailY, tailX + tailW/2 + 1, tailY, tailX, tailY + tailH + 2);
+    // Cream fill triangle (slightly inset)
+    g.fillStyle(CREAM);
+    g.fillTriangle(tailX - tailW/2 + border - 2, tailY - 1, tailX + tailW/2 - border + 2, tailY - 1, tailX, tailY + tailH - 3);
+
+    const txt = this.add.text(0, -1, text, {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '13px',
+      color: '#3a1f0a',
+      align: 'center',
+      wordWrap: { width: bw - border*2 - 12 },
     }).setOrigin(0.5);
-    bubble.add([bg, txt]);
-    bubble.setScale(0.7);
-    this.tweens.add({ targets: bubble, scale: 1, duration: 220, ease: 'Back.easeOut' });
+
+    bubble.add([g, txt]);
+    bubble.setScale(0.6);
+    this.tweens.add({ targets: bubble, scale: 1, duration: 200, ease: 'Back.easeOut' });
     this.profBubble = bubble;
+
+    if (autoDismissMs) {
+      this.time.delayedCall(autoDismissMs, () => this.removeProfBubble());
+    }
   }
 
   removeProfBubble() {
@@ -1170,22 +1244,17 @@ class GameScene extends Phaser.Scene {
     if (!this.cfg.friend) return;
     if (this.isDead || this.hasWon) return;
     if (this.friendUsedThisPeriod) return;
-    // can only use during MOVE phase (not STOP)
     if (this.phase !== 'move') return;
 
     this.friendUsedThisPeriod = true;
+    this.updateHUDHearts();
 
-    // friend raises hand
     this.friendSprite.setTexture('friendHand');
     if (this.friendHint) this.friendHint.setVisible(false);
 
-    // friend question bubble
     const q = FRIEND_QUESTIONS[Phaser.Math.Between(0, FRIEND_QUESTIONS.length - 1)];
     this.showFriendBubble(q);
 
-    this.updateLectureBar(q);
-
-    // small delay then enter DISTRACT phase
     this.time.delayedCall(450, () => {
       if (!this.isDead && !this.hasWon) this.enterDistractPhase();
     });
@@ -1198,7 +1267,7 @@ class GameScene extends Phaser.Scene {
     const bg = this.add.rectangle(0, 0, 180, 30, 0xeaffea, 1)
       .setStrokeStyle(2, 0x6aa8aa);
     const txt = this.add.text(0, 0, text, {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '12px', color: '#2a4a4a', align: 'center',
       wordWrap: { width: 165 },
     }).setOrigin(0.5);
@@ -1208,6 +1277,59 @@ class GameScene extends Phaser.Scene {
     this.time.delayedCall(2200, () => {
       this.tweens.add({ targets: bubble, alpha: 0, duration: 350, onComplete: () => bubble.destroy() });
     });
+  }
+
+  // ─── TA UPDATE ───────────────────────────────────
+  updateTAs(dt) {
+    if (!this.tas || this.tas.length === 0) return;
+    const range = 3 * TILE;
+    const halfH = 1.8 * TILE;
+
+    for (const ta of this.tas) {
+      // Move TA
+      ta.col += ta.dir * ta.speed * dt;
+      if (ta.col >= 18) { ta.col = 18; ta.dir = -1; }
+      if (ta.col <= 1)  { ta.col = 1;  ta.dir =  1; }
+      const sx = ta.col * TILE + TILE/2;
+      const sy = ta.row * TILE + TILE/2 - 2;
+      ta.sprite.x = sx;
+      ta.sprite.setFlipX(ta.dir === -1);
+
+      // Draw vision cone
+      ta.coneGfx.clear();
+      ta.coneGfx.fillStyle(0xffee00, 0.28);
+      if (ta.dir === 1) {
+        ta.coneGfx.fillTriangle(sx, sy, sx + range, sy - halfH, sx + range, sy + halfH);
+      } else {
+        ta.coneGfx.fillTriangle(sx, sy, sx - range, sy - halfH, sx - range, sy + halfH);
+      }
+
+      // Detection check
+      if (!this.isDead && !this.hasWon) {
+        const px = this.player.x, py = this.player.y;
+        const inCone = ta.dir === 1
+          ? px > sx && px < sx + range && py > sy - halfH && py < sy + halfH
+          : px < sx && px > sx - range && py > sy - halfH && py < sy + halfH;
+        if (inCone) {
+          this.triggerGameOver('ta');
+          return;
+        }
+      }
+    }
+  }
+
+  // ─── EXIT PROXIMITY DIALOGUE ─────────────────────
+  checkExitProximity() {
+    if (this.isDead || this.hasWon) return;
+    const ep = EXIT_POSITIONS[this.period];
+    const dist = Math.abs(this.playerTileX - ep.col) + Math.abs(this.playerTileY - ep.row);
+    if (dist <= 3 && !this.exitProximityShown) {
+      this.exitProximityShown = true;
+      const line = EXIT_PROXIMITY_LINES[Phaser.Math.Between(0, EXIT_PROXIMITY_LINES.length - 1)];
+      this.showProfBubble(line, 0xe8a445, 2500);
+    } else if (dist > 6) {
+      this.exitProximityShown = false;
+    }
   }
 
   // ─── UPDATE LOOP ─────────────────────────────────
@@ -1220,8 +1342,9 @@ class GameScene extends Phaser.Scene {
     this.updateGrace(dt);
     this.updatePlayerMovement(dt);
     this.updateProfBob();
-    this.updateLectureTimer(dt);
+    this.updateTAs(dt);
     this.checkExitCollision();
+    this.checkExitProximity();
   }
 
   updateGrace(dt) {
@@ -1229,7 +1352,6 @@ class GameScene extends Phaser.Scene {
     this.graceTimer += dt;
     if (this.graceTimer >= this.gracePeriod) {
       this.inGrace = false;
-      // after grace, if player still has pending path → caught
       if (this.dragPath.length > 0 || this.playerMoving) {
         this.triggerGameOver('move');
       }
@@ -1282,7 +1404,6 @@ class GameScene extends Phaser.Scene {
     const px = this.profPos.x;
     const py = this.profPos.y;
     if (this.phase === 'move') {
-      // writing on board — bob slightly
       this.profSprite.x = px + Math.sin(this.bobTick * 3) * 1.5;
       this.profSprite.y = py + Math.abs(Math.sin(this.bobTick * 4)) * 2;
     } else {
@@ -1290,26 +1411,6 @@ class GameScene extends Phaser.Scene {
       this.profSprite.y = py + Math.sin(this.bobTick * 2) * 1;
     }
     this.profShadow.setPosition(this.profSprite.x, py + 14);
-  }
-
-  updateLectureTimer(dt) {
-    if (this.phase === 'stop' || this.phase === 'suspicion' || this.phase === 'distract') return;
-    this.lectureTimer += dt;
-    if (this.lectureTimer >= this.lectureInterval) {
-      this.lectureTimer = 0;
-      this.nextLectureLine();
-    }
-  }
-
-  nextLectureLine() {
-    this.lectureIdx = (this.lectureIdx + 1) % this.lectureLines.length;
-    this.updateLectureBar(this.lectureLines[this.lectureIdx]);
-  }
-
-  updateLectureBar(text) {
-    const el = document.getElementById('lecture-text');
-    el.style.opacity = '0';
-    setTimeout(() => { el.textContent = text; el.style.opacity = '1'; }, 150);
   }
 
   checkExitCollision() {
@@ -1329,38 +1430,37 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.shake(300, 0.018);
     this.cameras.main.flash(500, 220, 80, 80, false);
 
-    // dim overlay
     const overlay = this.add.rectangle(W/2, H/2, W, H, 0x4a2c1a, 0).setDepth(30);
     this.tweens.add({ targets: overlay, alpha: 0.55, duration: 400 });
 
     const msg = CAUGHT_LINES[Phaser.Math.Between(0, CAUGHT_LINES.length - 1)];
+    const taMsg = reason === 'ta' ? '조교에게 발각됐다!' : null;
 
-    // Parchment dialog box
-    const box = this.add.rectangle(W/2, H/2, 420, 230, 0xfff8e0, 0.98)
+    this.add.rectangle(W/2, H/2, 420, 230, 0xfff8e0, 0.98)
       .setDepth(31).setStrokeStyle(4, 0xc44545);
     this.add.rectangle(W/2, H/2, 410, 220, 0x000000, 0)
       .setDepth(31).setStrokeStyle(1, 0x8b5a2b);
 
-    this.add.text(W/2, H/2 - 75, msg[0], {
-      fontFamily: "'Gowun Dodum', sans-serif",
+    this.add.text(W/2, H/2 - 75, taMsg || msg[0], {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '46px', color: '#c44545',
       stroke: '#fff8e0', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(32);
 
-    this.add.text(W/2, H/2 - 22, msg[1], {
-      fontFamily: "'Gowun Dodum', sans-serif",
+    this.add.text(W/2, H/2 - 22, taMsg ? '시야 안에 들어갔다...' : msg[1], {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '20px', color: '#5a3a1a',
     }).setOrigin(0.5).setDepth(32);
 
     this.add.text(W/2, H/2 + 12, this.period + '교시 실패', {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '15px', color: '#8b5a2b',
     }).setOrigin(0.5).setDepth(32);
 
     const retry = this.add.rectangle(W/2 - 70, H/2 + 75, 170, 42, 0xc44545)
       .setDepth(32).setStrokeStyle(3, 0x8b2c2c);
     this.add.text(W/2 - 70, H/2 + 75, '다시 도전', {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '20px', color: '#fff8e0', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(33);
     retry.setInteractive({ useHandCursor: true });
@@ -1374,7 +1474,7 @@ class GameScene extends Phaser.Scene {
     const titleBtn = this.add.rectangle(W/2 + 100, H/2 + 75, 130, 42, 0xa87042)
       .setDepth(32).setStrokeStyle(3, 0x6b4423);
     this.add.text(W/2 + 100, H/2 + 75, '제목으로', {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '17px', color: '#fff8e0', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(33);
     titleBtn.setInteractive({ useHandCursor: true });
@@ -1399,33 +1499,33 @@ class GameScene extends Phaser.Scene {
     const isLast = this.period >= 5;
     const lines  = WIN_LINES[this.period] || ['클리어!', ''];
 
-    const box = this.add.rectangle(W/2, H/2, 440, 230, 0xfff8e0, 0.98)
+    this.add.rectangle(W/2, H/2, 440, 230, 0xfff8e0, 0.98)
       .setDepth(31).setStrokeStyle(4, 0x6ba85a);
     this.add.rectangle(W/2, H/2, 430, 220, 0x000000, 0)
       .setDepth(31).setStrokeStyle(1, 0x4a7a3a);
 
     this.add.text(W/2, H/2 - 75, lines[0], {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '46px', color: '#4a7a3a',
       stroke: '#fff8e0', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(32);
 
     this.add.text(W/2, H/2 - 22, lines[1], {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '18px', color: '#5a3a1a', align: 'center',
       wordWrap: { width: 380 },
     }).setOrigin(0.5).setDepth(32);
 
     this.add.text(W/2, H/2 + 15,
-      isLast ? '🎓 모든 강의 탈출 성공! 🎓' : (this.period + '교시 → ' + (this.period + 1) + '교시'), {
-      fontFamily: "'Gowun Dodum', sans-serif",
+      isLast ? '* 모든 강의 탈출 성공! *' : (this.period + '교시 → ' + (this.period + 1) + '교시'), {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '16px', color: '#6b4423',
     }).setOrigin(0.5).setDepth(32);
 
     const nextBtn = this.add.rectangle(W/2, H/2 + 78, 250, 44, 0x6ba85a)
       .setDepth(32).setStrokeStyle(3, 0x4a7a3a);
-    this.add.text(W/2, H/2 + 78, isLast ? '처음으로 ↩' : '다음 교시로 ▶', {
-      fontFamily: "'Gowun Dodum', sans-serif",
+    this.add.text(W/2, H/2 + 78, isLast ? '처음으로' : '다음 교시로', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
       fontSize: '22px', color: '#fff8e0', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(33);
     nextBtn.setInteractive({ useHandCursor: true });
@@ -1440,7 +1540,6 @@ class GameScene extends Phaser.Scene {
       }
     });
 
-    // confetti
     const confettiColors = [0x6ba85a, 0xe8a445, 0xc44545, 0x4a6fa5, 0xfff8e0];
     for (let i = 0; i < 28; i++) {
       const dot = this.add.rectangle(
@@ -1473,7 +1572,9 @@ const config = {
   scene: [TitleScene, GameScene],
   render: { antialias: false, roundPixels: true },
 };
-new Phaser.Game(config);
+document.fonts.load("16px 'NeoDunggeunmo'").then(() => {
+  window._phaserGame = new Phaser.Game(config);
+});
 </script>
 </body>
 </html>

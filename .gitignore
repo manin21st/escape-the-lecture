@@ -4,3 +4,15 @@ Thumbs.db
 node_modules/
 .vscode/
 .idea/
+# v2 빌드 산출물
+v2/node_modules/
+v2/dist/
+# v2 자동 생성
+v2/.playwright-mcp/
+# v1 캡처 산출물 (저장소 외부 보관)
+.screenshots-v1/
+# playwright 캡처
+.playwright-mcp/
+# 환경 파일
+.env
+.env.*

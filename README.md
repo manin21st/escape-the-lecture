@@ -94,21 +94,54 @@ v2 는 `docs/` 폴더에 8개 spec 문서로 정리되어 있다.
 7. 에셋 계획
 8. 기술 스택 및 프로젝트 구조
 
+## 📁 저장소 구조 (Monorepo)
+
+```
+escape-the-lecture/
+├── README.md
+├── ecosystem.config.cjs    ← v1·v2 통합 PM2 설정
+├── .gitignore
+├── v1/
+│   ├── index.html          ← 단일 HTML 프로토타입
+│   └── server.ts           ← Bun 파일 서버 (port 5095)
+└── v2/
+    ├── src/                ← TypeScript 소스
+    ├── docs/               ← 8개 spec 문서
+    ├── package.json
+    ├── serve.ts            ← Bun 서버 (port 5075)
+    ├── build.ts
+    ├── ecosystem.config.cjs
+    └── ...
+```
+
 ## 🚀 로컬 실행
 
-### v1 (이 저장소)
+### v1
 
 ```bash
 git clone https://github.com/manin21st/escape-the-lecture.git
-cd escape-the-lecture
-# 그냥 index.html 을 브라우저로 열거나, 간단한 서버로 띄우면 됨
-python -m http.server 8000
-# → http://localhost:8000
+cd escape-the-lecture/v1
+bun run server.ts
+# → http://localhost:5095
 ```
 
 ### v2
 
-별도 저장소(예정)로 분리. Bun + Phaser 3.88 + TypeScript 환경.
+```bash
+cd escape-the-lecture/v2
+bun install
+bun run build.ts
+bun run serve.ts
+# → http://localhost:5075
+```
+
+### PM2 로 양쪽 동시 기동
+
+```bash
+cd escape-the-lecture
+pm2 start ecosystem.config.cjs
+pm2 save
+```
 
 ## 📝 라이선스
 

@@ -1,0 +1,16 @@
+{
+  "name": "escape-the-lecture-v2",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "bun run build.ts",
+    "serve": "bun run serve.ts",
+    "dev": "bun run build.ts && bun run serve.ts"
+  },
+  "dependencies": {
+    "phaser": "^3.88.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

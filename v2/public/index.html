@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>강의실 탈출 — Escape the Lecture v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/gh/neodgm/neodgm-webfont@latest/neodgm/style.css" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #2c1a0e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      /* Trigger font loading eagerly */
+      font-family: 'NeoDunggeunmo', 'Galmuri11', 'Press Start 2P', monospace;
+    }
+    #game-container {
+      position: relative;
+    }
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: block;
+    }
+    /* Hidden text to force font loading */
+    #font-loader {
+      position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;
+      font-family: 'NeoDunggeunmo'; font-size: 1px;
+    }
+    #font-loader2 {
+      position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;
+      font-family: 'Galmuri11'; font-size: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div id="font-loader">가나다라마바사</div>
+  <div id="font-loader2">가나다라마바사</div>
+  <div id="game-container"></div>
+  <script>
+    // Wait for fonts before starting Phaser to prevent tofu rendering
+    document.fonts.ready.then(function() {
+      var s = document.createElement('script');
+      s.src = 'bundle.js';
+      document.body.appendChild(s);
+    });
+  </script>
+</body>
+</html>
