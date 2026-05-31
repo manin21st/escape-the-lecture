@@ -1,11 +1,11 @@
 # 📚 강의실 탈출 — Escape the Lecture
 
-> 대학교 강의실에서 몰래 빠져나가는 코지 픽셀 아트 스텔스 게임
+> 대학교 강의실에서 교수님 몰래 빠져나가는 코지 픽셀 아트 스텔스 게임
 
-교수님이 PPT를 보는 동안만 움직일 수 있다. 돌아보면 멈춰야 한다.
+교수님이 PPT 보는 동안만 움직일 수 있다. 학생 쪽으로 돌아본 순간 멈춰야 한다.
 한 번이라도 들키면 출석 점수 -10점.
 
-**[▶ 플레이하기](https://manin21st.github.io/escape-the-lecture/)** _(GitHub Pages 활성화 후)_
+**[▶ v2 플레이하기 (최신)](https://escape-the-lecture.axenior.kr/)** · **[▶ v1 플레이하기 (프로토타입)](https://escape-the-lecture.axenior.kr/v1/)**
 
 ---
 
@@ -28,20 +28,75 @@
 | **4교시** | 그래프 이론 · 30% 확률 의심 이벤트 (빨간 플래시) |
 | **5교시** | 마지막 강의 · 출구가 **앞문**으로 이동, 교수님 옆을 지나가야 함 |
 
-## 🎨 디자인
+---
 
-- **비주얼**: Stardew Valley 풍 코지 픽셀 아트 (따뜻한 우드/베이지 톤)
-- **UI**: 양피지 스타일 RPG 프레임
-- **폰트**: Gowun Dodum (한글), Press Start 2P (영문)
-- **사운드**: 없음 (그래픽 전용)
+## 📦 두 가지 버전
 
-## 🛠 기술 스택
+### v1 — 프로토타입 (단일 HTML 1,480줄)
 
-- [Phaser 3.60.0](https://phaser.io/) (CDN 로드)
-- 단일 HTML 파일 — 외부 에셋 0개, 모든 픽셀 아트는 런타임 생성
-- 의존성 설치 없이 브라우저로 바로 실행
+- URL: https://escape-the-lecture.axenior.kr/v1/
+- Phaser 3.60 CDN + `index.html` 하나
+- 외부 에셋 0개, 모든 픽셀 아트 런타임 생성
+- 폰트: Gowun Dodum (한글) + Press Start 2P (영문)
+- 친구 1종류 · 출구는 5교시에만 앞문
+- "빨리 띄워보고 컨셉 확인" 목적의 1차 버전
+
+### v2 — 본격 리메이크 (TypeScript 모듈 분리)
+
+- URL: https://escape-the-lecture.axenior.kr/
+- Bun + Phaser 3.88 + TypeScript, PM2 서비스
+- **픽셀 퍼펙트 렌더링** (antialias off, NEAREST 필터, chunky 8fps walk)
+- Stardew Valley/포켓몬/하베스트문 풍 따뜻한 베이지·브라운·크림 팔레트
+- 픽셀 RPG UI (sharp corners + 픽셀 테두리 말풍선)
+- 다크/네온/사이버펑크 톤 배제
+
+---
+
+## 🆕 v2 에서 새로 들어간 시스템
+
+### 1) 조교(TA) 시스템 — 진짜 위협
+
+- 클립보드 든 조교가 통로를 순찰
+- 노란/주황/빨간 **시야 콘**이 진행 방향으로 회전
+- 콘 안에 잡히면 즉시 GAME OVER
+- 교시별 1명 → 4명까지 점증
+
+### 2) 친구 3종류 (전략 요소)
+
+- **GOOD FRIEND**: 교수/조교에게 질문 유도 (주의 끌기) — 2회 제한
+- **SLEEPING FRIEND**: 깨워도 효과 없음 (꽝)
+- **SNITCH FRIEND**: 오히려 찔러서 위험 증가
+- 클릭 전엔 어떤 종류인지 모름 → 선택 긴장감
+
+### 3) 동적 출구
+
+- 매 교시 출구 위치가 다름 (1교시 가까이 → 5교시 교수 옆)
+- TA 감시 구역 한복판에 출구가 놓이기도 함
+
+---
+
+## 🎨 비주얼 디테일
+
+- 학생 20명+ 좌석에 배치, 플레이어는 그 속에 거의 같은 외형으로 **숨음**
+- 교수: 안경 + 회색머리 + 검은 정장, 연단 고정 (순찰 X)
+- 한국어 대사 — "뒤에 학생 어디가요?" 같은 의심 대사 포함
+
+## 📚 문서화 (v2)
+
+v2 는 `docs/` 폴더에 8개 spec 문서로 정리되어 있다.
+
+1. v1 분석 및 약점
+2. 씬 설계
+3. 픽셀 퍼펙트 렌더 설정
+4. 엔티티 모델
+5. 5교시 진행 설계
+6. 친구·조교·교수 NPC 시스템
+7. 에셋 계획
+8. 기술 스택 및 프로젝트 구조
 
 ## 🚀 로컬 실행
+
+### v1 (이 저장소)
 
 ```bash
 git clone https://github.com/manin21st/escape-the-lecture.git
@@ -50,6 +105,10 @@ cd escape-the-lecture
 python -m http.server 8000
 # → http://localhost:8000
 ```
+
+### v2
+
+별도 저장소(예정)로 분리. Bun + Phaser 3.88 + TypeScript 환경.
 
 ## 📝 라이선스
 
