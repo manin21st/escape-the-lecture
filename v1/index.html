@@ -544,6 +544,7 @@ function generateTextures(scene) {
     hoodie: PAL.playerHoodie, hoodieD: PAL.playerHoodieD,
     skin: PAL.playerSkin, hair: PAL.playerHair,
     hasBag: true, hatColor: 0xcc2244,
+    outlineColor: 0x000000,
   });
   g.generateTexture('player', TILE, TILE); g.clear();
 
@@ -552,6 +553,7 @@ function generateTextures(scene) {
     hoodie: PAL.friendHoodie, hoodieD: PAL.friendHoodieD,
     skin: PAL.playerSkin, hair: PAL.friendHair,
     hasBag: false,
+    outlineColor: 0x33aa33,
   });
   g.generateTexture('friend', TILE, TILE); g.clear();
 
@@ -561,6 +563,7 @@ function generateTextures(scene) {
     skin: PAL.playerSkin, hair: PAL.friendHair,
     hasBag: false,
     handUp: true,
+    outlineColor: 0x33aa33,
   });
   g.generateTexture('friendHand', TILE, TILE); g.clear();
 
@@ -657,7 +660,11 @@ function drawProfessor(g, facingFront, angry = false) {
 }
 
 function drawStudent(g, opts) {
-  const { hoodie, hoodieD, skin, hair, hasBag, handUp, hatColor } = opts;
+  const { hoodie, hoodieD, skin, hair, hasBag, handUp, hatColor, outlineColor } = opts;
+  if (outlineColor) {
+    g.lineStyle(2, outlineColor, 1);
+    g.strokeRect(2, 0, 28, 32);
+  }
   if (hatColor) {
     g.fillStyle(hatColor);
     g.fillRect(9, 1, 14, 7);
@@ -984,6 +991,22 @@ class GameScene extends Phaser.Scene {
     this.playerShadow = this.add.ellipse(
       this.player.x, this.player.y + 13, 18, 6, 0x4a2c1a, 0.32
     ).setDepth(5.5);
+
+    const arrowBaseY = this.player.y - 28;
+    this.playerArrow = this.add.text(this.player.x, arrowBaseY, '▼', {
+      fontSize: '22px', color: '#ff3344',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(20);
+    this.tweens.add({
+      targets: this.playerArrow, y: arrowBaseY + 6,
+      duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+    this.time.delayedCall(5000, () => {
+      this.tweens.add({
+        targets: this.playerArrow, alpha: 0, duration: 800,
+        onComplete: () => { if (this.playerArrow) { this.playerArrow.destroy(); this.playerArrow = null; } },
+      });
+    });
   }
 
   spawnProfessor() {
