@@ -1376,7 +1376,7 @@ class GameScene extends Phaser.Scene {
   updateTAs(dt) {
     if (!this.tas || this.tas.length === 0) return;
     const range = 3 * TILE;
-    const halfH = 1.5 * TILE;
+    const halfH = 1.0 * TILE;
 
     for (const ta of this.tas) {
       let sx, sy;
