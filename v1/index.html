@@ -992,6 +992,7 @@ class GameScene extends Phaser.Scene {
       const startDir = i % 2 === 0 ? 1 : -1;
       const startCol = i % 2 === 0 ? 3 + (i * 2) : 16 - (i * 2);
       const ta = {
+        axis: 'h',
         row,
         col: Math.max(1, Math.min(18, startCol)),
         dir: startDir,
@@ -1010,6 +1011,30 @@ class GameScene extends Phaser.Scene {
       ta.coneGfx = this.add.graphics().setDepth(5.2);
       this.tas.push(ta);
     });
+
+    if (this.period === 4) {
+      const vta = {
+        axis: 'v',
+        row: 2,
+        col: 18,
+        dir: 1,
+        speed: 2.0,
+        patrolMin: 2,
+        patrolMax: 14,
+        sprite: null,
+        coneGfx: null,
+        taPaused: false,
+        taPauseIcon: null,
+      };
+      vta.sprite = this.add.image(
+        18 * TILE + TILE/2,
+        2 * TILE + TILE/2 - 2,
+        'ta'
+      ).setDepth(5.5);
+      vta.sprite.setFlipX(false);
+      vta.coneGfx = this.add.graphics().setDepth(5.2);
+      this.tas.push(vta);
+    }
   }
 
   // ─── BANNER ──────────────────────────────────────
@@ -1290,9 +1315,9 @@ class GameScene extends Phaser.Scene {
 
     // Pause TAs patrolling near friend's row for 4 seconds
     const friendRow = (this.friendSeat || FRIEND_SEAT)[1];
-    let pausedTAs = this.tas.filter(ta => ta.row === friendRow + 1);
+    let pausedTAs = this.tas.filter(ta => ta.axis !== 'v' && ta.row === friendRow + 1);
     if (pausedTAs.length === 0) {
-      const below = this.tas.filter(ta => ta.row > friendRow).sort((a, b) => a.row - b.row);
+      const below = this.tas.filter(ta => ta.axis !== 'v' && ta.row > friendRow).sort((a, b) => a.row - b.row);
       if (below.length > 0) pausedTAs = [below[0]];
     }
     pausedTAs.forEach(ta => {
@@ -1345,36 +1370,63 @@ class GameScene extends Phaser.Scene {
     const halfH = 0.5 * TILE;
 
     for (const ta of this.tas) {
-      // Move TA (skip if paused by friend distraction)
-      if (!ta.taPaused) {
-        ta.col += ta.dir * ta.speed * dt;
-        if (ta.col >= 18) { ta.col = 18; ta.dir = -1; }
-        if (ta.col <= 1)  { ta.col = 1;  ta.dir =  1; }
-      }
-      const sx = ta.col * TILE + TILE/2;
-      const sy = ta.row * TILE + TILE/2 - 2;
-      ta.sprite.x = sx;
-      ta.sprite.setFlipX(ta.dir === -1);
-      ta.sprite.setAlpha(ta.taPaused ? 0.5 : 1);
+      let sx, sy;
+      if (ta.axis === 'v') {
+        // Vertical patrol
+        if (!ta.taPaused) {
+          ta.row += ta.dir * ta.speed * dt;
+          if (ta.row >= ta.patrolMax) { ta.row = ta.patrolMax; ta.dir = -1; }
+          if (ta.row <= ta.patrolMin) { ta.row = ta.patrolMin; ta.dir =  1; }
+        }
+        sx = ta.col * TILE + TILE/2;
+        sy = ta.row * TILE + TILE/2 - 2;
+        ta.sprite.x = sx;
+        ta.sprite.y = sy;
+        ta.sprite.setFlipX(false);
+        ta.sprite.setAlpha(ta.taPaused ? 0.5 : 1);
 
-      // Draw vision cone
-      ta.coneGfx.clear();
-      ta.coneGfx.fillStyle(ta.taPaused ? 0x888888 : 0xffee00, ta.taPaused ? 0.12 : 0.28);
-      if (ta.dir === 1) {
-        ta.coneGfx.fillTriangle(sx, sy, sx + range, sy - halfH, sx + range, sy + halfH);
+        ta.coneGfx.clear();
+        ta.coneGfx.fillStyle(ta.taPaused ? 0x888888 : 0xffee00, ta.taPaused ? 0.12 : 0.28);
+        if (ta.dir === 1) {
+          ta.coneGfx.fillTriangle(sx, sy, sx - halfH, sy + range, sx + halfH, sy + range);
+        } else {
+          ta.coneGfx.fillTriangle(sx, sy, sx - halfH, sy - range, sx + halfH, sy - range);
+        }
+
+        if (!ta.taPaused && !this.isDead && !this.hasWon) {
+          const px = this.player.x, py = this.player.y;
+          const inCone = ta.dir === 1
+            ? py > sy && py < sy + range && px > sx - halfH && px < sx + halfH
+            : py < sy && py > sy - range && px > sx - halfH && px < sx + halfH;
+          if (inCone) { this.triggerGameOver('ta'); return; }
+        }
       } else {
-        ta.coneGfx.fillTriangle(sx, sy, sx - range, sy - halfH, sx - range, sy + halfH);
-      }
+        // Horizontal patrol
+        if (!ta.taPaused) {
+          ta.col += ta.dir * ta.speed * dt;
+          if (ta.col >= 18) { ta.col = 18; ta.dir = -1; }
+          if (ta.col <= 1)  { ta.col = 1;  ta.dir =  1; }
+        }
+        sx = ta.col * TILE + TILE/2;
+        sy = ta.row * TILE + TILE/2 - 2;
+        ta.sprite.x = sx;
+        ta.sprite.setFlipX(ta.dir === -1);
+        ta.sprite.setAlpha(ta.taPaused ? 0.5 : 1);
 
-      // Detection check (skipped while paused)
-      if (!ta.taPaused && !this.isDead && !this.hasWon) {
-        const px = this.player.x, py = this.player.y;
-        const inCone = ta.dir === 1
-          ? px > sx && px < sx + range && py > sy - halfH && py < sy + halfH
-          : px < sx && px > sx - range && py > sy - halfH && py < sy + halfH;
-        if (inCone) {
-          this.triggerGameOver('ta');
-          return;
+        ta.coneGfx.clear();
+        ta.coneGfx.fillStyle(ta.taPaused ? 0x888888 : 0xffee00, ta.taPaused ? 0.12 : 0.28);
+        if (ta.dir === 1) {
+          ta.coneGfx.fillTriangle(sx, sy, sx + range, sy - halfH, sx + range, sy + halfH);
+        } else {
+          ta.coneGfx.fillTriangle(sx, sy, sx - range, sy - halfH, sx - range, sy + halfH);
+        }
+
+        if (!ta.taPaused && !this.isDead && !this.hasWon) {
+          const px = this.player.x, py = this.player.y;
+          const inCone = ta.dir === 1
+            ? px > sx && px < sx + range && py > sy - halfH && py < sy + halfH
+            : px < sx && px > sx - range && py > sy - halfH && py < sy + halfH;
+          if (inCone) { this.triggerGameOver('ta'); return; }
         }
       }
     }
