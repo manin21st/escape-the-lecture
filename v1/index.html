@@ -992,15 +992,10 @@ class GameScene extends Phaser.Scene {
       this.player.x, this.player.y + 13, 18, 6, 0x4a2c1a, 0.32
     ).setDepth(5.5);
 
-    const arrowBaseY = this.player.y - 28;
-    this.playerArrow = this.add.text(this.player.x, arrowBaseY, '▼', {
+    this.playerArrow = this.add.text(this.player.x, this.player.y - 28, '▼', {
       fontSize: '22px', color: '#ff3344',
       stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setDepth(20);
-    this.tweens.add({
-      targets: this.playerArrow, y: arrowBaseY + 6,
-      duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-    });
     this.time.delayedCall(5000, () => {
       this.tweens.add({
         targets: this.playerArrow, alpha: 0, duration: 800,
@@ -1524,6 +1519,12 @@ class GameScene extends Phaser.Scene {
     this.updateTAs(dt);
     this.checkExitCollision();
     this.checkExitProximity();
+    if (this.playerArrow) {
+      this.playerArrow.setPosition(
+        this.player.x,
+        this.player.y - 28 + Math.sin(this.bobTick * 6) * 3
+      );
+    }
   }
 
   updateGrace(dt) {
