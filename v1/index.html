@@ -1675,14 +1675,42 @@ class GameScene extends Phaser.Scene {
       });
     });
 
-    // Phase D — F 딱지 (4.5s)
+    // Phase D — F 딱지 스티커 (4.5s)
     this.time.delayedCall(4500, () => {
+      const stickerSize = Math.min(W, H) * 0.55;
+      const radius = stickerSize / 2;
+      // positioned at center so setScale scales from center
+      const stickerGfx = this.add.graphics({ x: W/2, y: H/2 }).setDepth(40);
+      // shadow
+      stickerGfx.fillStyle(0x000000, 0.45);
+      stickerGfx.fillCircle(7, 9, radius + 6);
+      // thick black border
+      stickerGfx.fillStyle(0x000000, 1);
+      stickerGfx.fillCircle(0, 0, radius + 7);
+      // white label background
+      stickerGfx.fillStyle(0xffffff, 1);
+      stickerGfx.fillCircle(0, 0, radius);
+      stickerGfx.setScale(4.5).setAngle(-15);
+
+      const fontSize = Math.round(stickerSize * 0.82);
       const fStamp = this.add.text(W/2, H/2, 'F', {
         fontFamily: "'NeoDunggeunmo', sans-serif",
-        fontSize: '192px', color: '#cc2244',
-        stroke: '#880022', strokeThickness: 8,
-      }).setOrigin(0.5).setDepth(40).setScale(0.1).setAngle(-15);
-      this.tweens.add({ targets: fStamp, scale: 1, angle: -8, duration: 350, ease: 'Back.easeOut' });
+        fontSize: `${fontSize}px`, color: '#cc2244',
+        stroke: '#000000', strokeThickness: 10,
+      }).setOrigin(0.5).setDepth(41).setScale(4.5).setAngle(-15);
+
+      // scale in from 4.5x → 1x with Back.easeOut
+      this.tweens.add({
+        targets: [stickerGfx, fStamp],
+        scale: 1, angle: -10,
+        duration: 400, ease: 'Back.easeOut',
+      });
+      // camera shake after stamp lands
+      this.time.delayedCall(200, () => {
+        this.cameras.main.shake(400, 0.02);
+      });
+      // white flash on stamp hit
+      this.cameras.main.flash(80, 255, 255, 255, false);
     });
 
     // Phase E — 플레이어 "안돼에에에에" (6.5s)
