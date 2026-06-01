@@ -1046,6 +1046,32 @@ class GameScene extends Phaser.Scene {
       vta.coneGfx = this.add.graphics().setDepth(5.2);
       this.tas.push(vta);
     }
+
+    // Period 5: static exit-blocking TA — permanently covers the exit approach
+    // Exit is at row 3, col 18. This TA sits at col 15 row 3 facing right,
+    // detection cone covers cols 15.5–18.5 so reaching col 18 is impossible without pause.
+    if (this.period === 5) {
+      const blocker = {
+        axis: 'h',
+        row: 3,
+        col: 15,
+        dir: 1,
+        speed: 0,
+        exitBlocker: true,
+        sprite: null,
+        coneGfx: null,
+        taPaused: false,
+        taPauseIcon: null,
+      };
+      blocker.sprite = this.add.image(
+        15 * TILE + TILE/2,
+        3 * TILE + TILE/2 - 2,
+        'ta'
+      ).setDepth(5.5);
+      blocker.sprite.setFlipX(false);
+      blocker.coneGfx = this.add.graphics().setDepth(5.2);
+      this.tas.push(blocker);
+    }
   }
 
   // ─── BANNER ──────────────────────────────────────
@@ -1324,12 +1350,17 @@ class GameScene extends Phaser.Scene {
     this.friendSprite.setTexture('friendHand');
     if (this.friendHint) this.friendHint.setVisible(false);
 
-    // Pause TAs patrolling near friend's row for 4 seconds
-    const friendRow = (this.friendSeat || FRIEND_SEAT)[1];
-    let pausedTAs = this.tas.filter(ta => ta.axis !== 'v' && ta.row === friendRow + 1);
-    if (pausedTAs.length === 0) {
-      const below = this.tas.filter(ta => ta.axis !== 'v' && ta.row > friendRow).sort((a, b) => a.row - b.row);
-      if (below.length > 0) pausedTAs = [below[0]];
+    // Pause TAs for 4 seconds — period 5 targets the exit-blocking TA specifically
+    let pausedTAs;
+    if (this.period === 5) {
+      pausedTAs = this.tas.filter(ta => ta.exitBlocker);
+    } else {
+      const friendRow = (this.friendSeat || FRIEND_SEAT)[1];
+      pausedTAs = this.tas.filter(ta => ta.axis !== 'v' && ta.row === friendRow + 1);
+      if (pausedTAs.length === 0) {
+        const below = this.tas.filter(ta => ta.axis !== 'v' && ta.row > friendRow).sort((a, b) => a.row - b.row);
+        if (below.length > 0) pausedTAs = [below[0]];
+      }
     }
     pausedTAs.forEach(ta => {
       ta.taPaused = true;
@@ -1847,6 +1878,14 @@ const config = {
 document.fonts.load("16px 'NeoDunggeunmo'").then(() => {
   window._phaserGame = new Phaser.Game(config);
 });
+
+window.__startPeriod = (n) => {
+  const game = window._phaserGame;
+  if (!game) { console.warn('__startPeriod: game not ready'); return; }
+  game.scene.stop('TitleScene');
+  game.scene.stop('GameScene');
+  game.scene.start('GameScene', { period: n });
+};
 
 window.__triggerEnding = () => {
   const game = window._phaserGame;
