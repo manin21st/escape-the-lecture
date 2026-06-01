@@ -3,7 +3,7 @@ import { TILE, GAME_W, GAME_H, PAL, FONTS } from '../constants';
 import type { TileType, Phase, GameState } from '../types';
 import { PERIOD_CONFIGS } from '../data/periods';
 import { DIALOGS } from '../data/dialogs';
-import { buildGrid, isWalkable, SEAT_POSITIONS, PLAYER_START, FRIEND_SEATS, TA_PATROL_PATHS } from '../data/maps';
+import { buildGrid, isWalkable, SEAT_POSITIONS, PLAYER_START, pickRandomFriendSeats, TA_PATROL_PATHS } from '../data/maps';
 import { MapSystem } from '../systems/MapSystem';
 import { PhaseManager } from '../systems/PhaseManager';
 import { InputSystem } from '../systems/InputSystem';
@@ -59,7 +59,7 @@ export class GameScene extends Phaser.Scene {
     this.professor = new Professor(this);
 
     // Background NPCs (fill most seats, skip friend seats and player seat)
-    const friendSeats = FRIEND_SEATS[this.period] ?? [];
+    const friendSeats = pickRandomFriendSeats(config.friendTypes.length, [PLAYER_START]);
     const usedSeats = new Set(friendSeats.map(t => `${t.x},${t.y}`));
     usedSeats.add(`${PLAYER_START.x},${PLAYER_START.y}`);
 

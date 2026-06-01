@@ -174,7 +174,7 @@ export function generateCharTextures(scene: Phaser.Scene): void {
   drawStudent(g, PAL.npcSkin, 0x6b4423, 0x8888aa, 0x6666aa);
   g.generateTexture('npc', SW, SH);
 
-  // --- PLAYER (green backpack) ---
+  // --- PLAYER (green backpack + red cap) ---
   g.clear();
   drawStudent(g, PAL.npcSkin, 0x4a2c1a, 0x5577aa, 0x4455aa);
   // Green backpack on left side
@@ -183,6 +183,12 @@ export function generateCharTextures(scene: Phaser.Scene): void {
   g.fillStyle(0x4a8a3a);
   g.fillRect(1, 11, 5, 1); // strap top
   g.fillRect(1, 20, 5, 1); // strap bottom
+  // Red cap (covers hair area)
+  g.fillStyle(0xcc2244);
+  g.fillRect(7, 0, 10, 5);  // cap crown
+  g.fillRect(5, 4, 14, 2);  // cap brim (wider than head)
+  g.fillStyle(0x991133);
+  g.fillRect(5, 5, 14, 1);  // brim underside shadow
   g.generateTexture('player', SW, SH);
 
   // --- PROFESSOR (32×48, gray hair, glasses, black suit) ---

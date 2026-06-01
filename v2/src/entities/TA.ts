@@ -18,6 +18,12 @@ export class TA {
   private speed: number;
   private scene: Phaser.Scene;
   private suspTimer = 0;
+  private isPaused = false;
+  private pauseTimer = 0;
+  private suspicionBoostTimer = 0;
+  private pauseIcon: Phaser.GameObjects.Text | null = null;
+
+  get aisleX(): number { return this.patrolPath[0].x; }
 
   constructor(scene: Phaser.Scene, patrolPath: TilePoint[], speed: number) {
     this.scene = scene;
@@ -48,7 +54,42 @@ export class TA {
     }
   }
 
+  pause(duration: number): void {
+    this.isPaused = true;
+    this.pauseTimer = duration;
+    if (!this.pauseIcon) {
+      this.pauseIcon = this.scene.add.text(
+        this.sprite.x, this.sprite.y - 22, '⏸',
+        { fontSize: '11px', color: '#999999', fontFamily: 'monospace' },
+      ).setOrigin(0.5).setDepth(30);
+    }
+  }
+
+  boostSuspicion(duration: number): void {
+    this.suspicionBoostTimer = duration;
+    if (this.visionState === 'normal') {
+      this.visionState = 'suspicious';
+      this.suspTimer = duration;
+    }
+  }
+
   update(dt: number): void {
+    if (this.isPaused) {
+      this.pauseTimer -= dt;
+      if (this.pauseTimer <= 0) {
+        this.isPaused = false;
+        if (this.pauseIcon) { this.pauseIcon.destroy(); this.pauseIcon = null; }
+      } else if (this.pauseIcon) {
+        this.pauseIcon.setPosition(this.sprite.x, this.sprite.y - 22);
+      }
+      this.drawVisionCone();
+      return;
+    }
+
+    if (this.suspicionBoostTimer > 0) {
+      this.suspicionBoostTimer -= dt;
+    }
+
     if (this.patrolPath.length < 2) return;
 
     const target = this.patrolPath[this.patrolIdx];
@@ -82,10 +123,12 @@ export class TA {
   }
 
   checkPlayer(player: Player): 'outside' | 'suspicious' | 'detected' {
+    if (this.isPaused) return 'outside';
+
     const dx = player.sprite.x - this.sprite.x;
     const dy = player.sprite.y - this.sprite.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const range = 4 * TILE;
+    const range = (this.suspicionBoostTimer > 0 ? 6 : 4) * TILE;
 
     if (dist > range) {
       if (this.visionState !== 'suspicious') this.visionState = 'normal';
@@ -115,10 +158,23 @@ export class TA {
     const g = this.visionGraphic;
     g.clear();
 
-    const colorMap = { normal: PAL.warnYellow, suspicious: PAL.suspOrange, detected: PAL.detected };
-    const alphaMap = { normal: 0.22, suspicious: 0.35, detected: 0.55 };
-    const color = colorMap[this.visionState];
-    const alpha = alphaMap[this.visionState];
+    let color: number;
+    let alpha: number;
+
+    if (this.isPaused) {
+      color = 0x888888;
+      alpha = 0.15;
+    } else if (this.suspicionBoostTimer > 0) {
+      const colorMap = { normal: 0xff6600, suspicious: PAL.suspOrange, detected: PAL.detected };
+      const alphaMap = { normal: 0.32, suspicious: 0.42, detected: 0.55 };
+      color = colorMap[this.visionState];
+      alpha = alphaMap[this.visionState];
+    } else {
+      const colorMap = { normal: PAL.warnYellow, suspicious: PAL.suspOrange, detected: PAL.detected };
+      const alphaMap = { normal: 0.22, suspicious: 0.35, detected: 0.55 };
+      color = colorMap[this.visionState];
+      alpha = alphaMap[this.visionState];
+    }
 
     const range = 4 * TILE;
     const halfAngle = 45 * DEG_TO_RAD;
@@ -152,5 +208,6 @@ export class TA {
   destroy(): void {
     this.sprite.destroy();
     this.visionGraphic.destroy();
+    if (this.pauseIcon) this.pauseIcon.destroy();
   }
 }

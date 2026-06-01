@@ -76,6 +76,20 @@ export const FRIEND_SEATS: Record<number, TilePoint[]> = {
   5: [{ x: 9,  y: 11 }, { x: 15, y: 6  }, { x: 17, y: 12 }, { x: 5,  y: 8  }],
 };
 
+// Randomly pick `count` unique seats from SEAT_POSITIONS, excluding given tiles
+export function pickRandomFriendSeats(count: number, excludeTiles: TilePoint[]): TilePoint[] {
+  const excluded = new Set(excludeTiles.map(t => `${t.x},${t.y}`));
+  const pool = SEAT_POSITIONS.filter(t => !excluded.has(`${t.x},${t.y}`));
+  const selected: TilePoint[] = [];
+  for (let i = 0; i < count && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    selected.push(pool[idx]);
+    excluded.add(`${pool[idx].x},${pool[idx].y}`);
+    pool.splice(idx, 1);
+  }
+  return selected;
+}
+
 // TA patrol paths — use aisle cols
 export const TA_PATROL_PATHS: Record<number, TilePoint[][]> = {
   1: [],

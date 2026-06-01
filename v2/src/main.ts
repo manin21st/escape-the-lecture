@@ -37,4 +37,4 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'game-container',
 };
 
-new Phaser.Game(config);
+(window as any).__phaserGame = new Phaser.Game(config);

@@ -66,17 +66,16 @@ export class Friend {
     if (this.type === 'snitch') {
       const line = DIALOGS.friend.snitch[Math.floor(Math.random() * DIALOGS.friend.snitch.length)];
       dialogs.show(this.sprite.x, this.sprite.y - 24, line, { borderColor: PAL.friendSnitch });
+      for (const ta of this.getSameAisleTAs(tas)) ta.boostSuspicion(4);
       onSnitchEvent();
       return;
     }
 
-    // Good friend: A (professor) or B (TA) depending on availability
-    const hasTAs = tas.length > 0;
-    if (hasTAs && Math.random() < 0.4) {
-      // B: distract nearest TA
-      this.doTADistract(tas, dialogs);
+    // Good friend: pause same-aisle TAs; fall back to prof distract if none
+    const sameAisleTAs = this.getSameAisleTAs(tas);
+    if (sameAisleTAs.length > 0) {
+      this.pauseSameAisleTAs(sameAisleTAs, dialogs);
     } else {
-      // A: distract professor
       this.doProfDistract(dialogs, phase, profSprite);
     }
   }
@@ -94,25 +93,19 @@ export class Friend {
       dialogs.show(profSprite.x, profSprite.y - 28, profLine));
   }
 
-  private doTADistract(
-    tas: import('./TA').TA[],
+  private getSameAisleTAs(tas: import('./TA').TA[]): import('./TA').TA[] {
+    const x = this.tile.x;
+    const aisleXs = x <= 6 ? [1, 7] : x <= 12 ? [7, 13] : [13, 18];
+    return tas.filter(ta => aisleXs.includes(ta.aisleX));
+  }
+
+  private pauseSameAisleTAs(
+    sameAisleTAs: import('./TA').TA[],
     dialogs: DialogSystem,
   ): void {
     const line = DIALOGS.friend.good_ta[Math.floor(Math.random() * DIALOGS.friend.good_ta.length)];
     dialogs.show(this.sprite.x, this.sprite.y - 24, line);
-
-    let nearest: import('./TA').TA | null = null;
-    let nearestDist = Infinity;
-    for (const ta of tas) {
-      const d = Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, ta.sprite.x, ta.sprite.y);
-      if (d < nearestDist) { nearest = ta; nearestDist = d; }
-    }
-    if (nearest) {
-      nearest.redirectTo(this.tile, 4);
-      const taLine = DIALOGS.ta.distracted[Math.floor(Math.random() * DIALOGS.ta.distracted.length)];
-      this.scene.time.delayedCall(600, () =>
-        dialogs.show(nearest!.sprite.x, nearest!.sprite.y - 28, taLine));
-    }
+    for (const ta of sameAisleTAs) ta.pause(4);
   }
 
   setOnClick(
