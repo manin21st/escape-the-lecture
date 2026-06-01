@@ -163,6 +163,14 @@
     from { background: #c44545; }
     to   { background: #ff5050; }
   }
+  #credit-line {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #8b5a2b;
+    text-align: center;
+    font-family: 'NeoDunggeunmo', sans-serif;
+    opacity: 0.8;
+  }
   @media (max-width: 720px) {
     body { padding: 8px 6px; }
     #game-frame {
@@ -228,6 +236,7 @@
     <div class="panel-credit">— [학생 이름] 2026</div>
   </div>
 </div>
+<div id="credit-line">본 프로젝트는 ChatGPT 와 Claude 를 활용하여 제작하였다</div>
 <script>
 // ════════════════════════════════════════════════════════
 // CONSTANTS
@@ -1367,7 +1376,7 @@ class GameScene extends Phaser.Scene {
   updateTAs(dt) {
     if (!this.tas || this.tas.length === 0) return;
     const range = 3 * TILE;
-    const halfH = 0.5 * TILE;
+    const halfH = 1.5 * TILE;
 
     for (const ta of this.tas) {
       let sx, sy;
