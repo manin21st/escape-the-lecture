@@ -1320,7 +1320,8 @@ class GameScene extends Phaser.Scene {
   showFriendBubble(text) {
     const fs = this.friendSeat || FRIEND_SEAT;
     const fx = fs[0] * TILE + TILE/2;
-    const fy = fs[1] * TILE - 12;
+    const baseY = fs[1] * TILE - 12;
+    const fy = fs[1] <= 7 ? fs[1] * TILE + TILE + 12 : baseY;
     const bubble = this.add.container(fx, fy).setDepth(22);
     const bg = this.add.rectangle(0, 0, 180, 30, 0xeaffea, 1)
       .setStrokeStyle(2, 0x6aa8aa);
@@ -1341,7 +1342,7 @@ class GameScene extends Phaser.Scene {
   updateTAs(dt) {
     if (!this.tas || this.tas.length === 0) return;
     const range = 3 * TILE;
-    const halfH = 1.8 * TILE;
+    const halfH = 0.5 * TILE;
 
     for (const ta of this.tas) {
       // Move TA (skip if paused by friend distraction)
