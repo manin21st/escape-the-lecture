@@ -532,7 +532,7 @@ function generateTextures(scene) {
   drawStudent(g, {
     hoodie: PAL.playerHoodie, hoodieD: PAL.playerHoodieD,
     skin: PAL.playerSkin, hair: PAL.playerHair,
-    hasBag: true,
+    hasBag: true, hatColor: 0xcc2244,
   });
   g.generateTexture('player', TILE, TILE); g.clear();
 
@@ -646,10 +646,18 @@ function drawProfessor(g, facingFront, angry = false) {
 }
 
 function drawStudent(g, opts) {
-  const { hoodie, hoodieD, skin, hair, hasBag, handUp } = opts;
-  g.fillStyle(hair);
-  g.fillRect(9, 2, 14, 7);
-  g.fillRect(8, 4, 16, 5);
+  const { hoodie, hoodieD, skin, hair, hasBag, handUp, hatColor } = opts;
+  if (hatColor) {
+    g.fillStyle(hatColor);
+    g.fillRect(9, 1, 14, 7);
+    g.fillRect(7, 7, 18, 2);
+    g.fillStyle(shade(hatColor, -0.25));
+    g.fillRect(9, 1, 14, 2);
+  } else {
+    g.fillStyle(hair);
+    g.fillRect(9, 2, 14, 7);
+    g.fillRect(8, 4, 16, 5);
+  }
   g.fillStyle(skin);
   g.fillRect(10, 7, 12, 9);
   g.fillStyle(skin);
@@ -904,7 +912,13 @@ class GameScene extends Phaser.Scene {
   // ─── NPCs ────────────────────────────────────────
   spawnNPCs() {
     this.npcs = [];
+    let friendIdx = -1;
+    if (this.cfg.friend) {
+      friendIdx = Phaser.Math.Between(0, NPC_SEATS.length - 1);
+      this.friendSeat = NPC_SEATS[friendIdx];
+    }
     for (let i = 0; i < NPC_SEATS.length; i++) {
+      if (i === friendIdx) continue;
       const [tx, ty] = NPC_SEATS[i];
       const npc = this.add.image(
         tx*TILE + TILE/2,
@@ -923,7 +937,7 @@ class GameScene extends Phaser.Scene {
     }
 
     if (this.cfg.friend) {
-      const [fx, fy] = FRIEND_SEAT;
+      const [fx, fy] = this.friendSeat;
       this.friendSprite = this.add.image(fx*TILE + TILE/2, fy*TILE + TILE/2 - 2, 'friend').setDepth(5);
       this.friendSprite.setInteractive({ useHandCursor: true });
       this.friendSprite.on('pointerdown', (ptr, lx, ly, evt) => {
@@ -936,7 +950,7 @@ class GameScene extends Phaser.Scene {
         duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
       });
       this.friendHint = this.add.text(
-        fx*TILE + TILE/2, fy*TILE - 8, '?',
+        fx*TILE + TILE/2, fy*TILE - 8, '? 친구',
         {
           fontFamily: "'NeoDunggeunmo', sans-serif",
           fontSize: '16px', color: '#6aa8aa',
@@ -984,6 +998,8 @@ class GameScene extends Phaser.Scene {
         speed: 2.5,
         sprite: null,
         coneGfx: null,
+        taPaused: false,
+        taPauseIcon: null,
       };
       ta.sprite = this.add.image(
         ta.col * TILE + TILE/2,
@@ -1272,6 +1288,27 @@ class GameScene extends Phaser.Scene {
     this.friendSprite.setTexture('friendHand');
     if (this.friendHint) this.friendHint.setVisible(false);
 
+    // Pause TAs patrolling near friend's row for 4 seconds
+    const friendRow = (this.friendSeat || FRIEND_SEAT)[1];
+    let pausedTAs = this.tas.filter(ta => ta.row === friendRow + 1);
+    if (pausedTAs.length === 0) {
+      const below = this.tas.filter(ta => ta.row > friendRow).sort((a, b) => a.row - b.row);
+      if (below.length > 0) pausedTAs = [below[0]];
+    }
+    pausedTAs.forEach(ta => {
+      ta.taPaused = true;
+      ta.taPauseIcon = this.add.text(ta.sprite.x, ta.sprite.y - 20, '⏸', {
+        fontSize: '14px', color: '#ffffff',
+        stroke: '#333333', strokeThickness: 2,
+      }).setDepth(7).setOrigin(0.5);
+    });
+    this.time.delayedCall(4000, () => {
+      pausedTAs.forEach(ta => {
+        ta.taPaused = false;
+        if (ta.taPauseIcon) { ta.taPauseIcon.destroy(); ta.taPauseIcon = null; }
+      });
+    });
+
     const q = FRIEND_QUESTIONS[Phaser.Math.Between(0, FRIEND_QUESTIONS.length - 1)];
     this.showFriendBubble(q);
 
@@ -1281,8 +1318,9 @@ class GameScene extends Phaser.Scene {
   }
 
   showFriendBubble(text) {
-    const fx = FRIEND_SEAT[0] * TILE + TILE/2;
-    const fy = FRIEND_SEAT[1] * TILE - 12;
+    const fs = this.friendSeat || FRIEND_SEAT;
+    const fx = fs[0] * TILE + TILE/2;
+    const fy = fs[1] * TILE - 12;
     const bubble = this.add.container(fx, fy).setDepth(22);
     const bg = this.add.rectangle(0, 0, 180, 30, 0xeaffea, 1)
       .setStrokeStyle(2, 0x6aa8aa);
@@ -1306,26 +1344,29 @@ class GameScene extends Phaser.Scene {
     const halfH = 1.8 * TILE;
 
     for (const ta of this.tas) {
-      // Move TA
-      ta.col += ta.dir * ta.speed * dt;
-      if (ta.col >= 18) { ta.col = 18; ta.dir = -1; }
-      if (ta.col <= 1)  { ta.col = 1;  ta.dir =  1; }
+      // Move TA (skip if paused by friend distraction)
+      if (!ta.taPaused) {
+        ta.col += ta.dir * ta.speed * dt;
+        if (ta.col >= 18) { ta.col = 18; ta.dir = -1; }
+        if (ta.col <= 1)  { ta.col = 1;  ta.dir =  1; }
+      }
       const sx = ta.col * TILE + TILE/2;
       const sy = ta.row * TILE + TILE/2 - 2;
       ta.sprite.x = sx;
       ta.sprite.setFlipX(ta.dir === -1);
+      ta.sprite.setAlpha(ta.taPaused ? 0.5 : 1);
 
       // Draw vision cone
       ta.coneGfx.clear();
-      ta.coneGfx.fillStyle(0xffee00, 0.28);
+      ta.coneGfx.fillStyle(ta.taPaused ? 0x888888 : 0xffee00, ta.taPaused ? 0.12 : 0.28);
       if (ta.dir === 1) {
         ta.coneGfx.fillTriangle(sx, sy, sx + range, sy - halfH, sx + range, sy + halfH);
       } else {
         ta.coneGfx.fillTriangle(sx, sy, sx - range, sy - halfH, sx - range, sy + halfH);
       }
 
-      // Detection check
-      if (!this.isDead && !this.hasWon) {
+      // Detection check (skipped while paused)
+      if (!ta.taPaused && !this.isDead && !this.hasWon) {
         const px = this.player.x, py = this.player.y;
         const inCone = ta.dir === 1
           ? px > sx && px < sx + range && py > sy - halfH && py < sy + halfH
