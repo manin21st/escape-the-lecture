@@ -1553,6 +1553,8 @@ class GameScene extends Phaser.Scene {
     this.hasWon = true;
     this.canMove = false;
 
+    if (this.period >= 5) { this.playFTwistEnding(); return; }
+
     this.cameras.main.flash(700, 240, 220, 180, false);
 
     const overlay = this.add.rectangle(W/2, H/2, W, H, 0x6ba85a, 0).setDepth(30);
@@ -1620,6 +1622,119 @@ class GameScene extends Phaser.Scene {
       });
     }
   }
+
+  // ─── F TWIST ENDING (period 5 only) ──────────────
+  playFTwistEnding() {
+    // Phase A — 폭죽 (0–2s)
+    this.cameras.main.flash(700, 240, 220, 180, false);
+    const clearTxt = this.add.text(W/2, H/2 - 20, '자유다!', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '46px', color: '#4a7a3a',
+      stroke: '#fff8e0', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(32).setAlpha(0);
+    this.tweens.add({ targets: clearTxt, alpha: 1, duration: 300 });
+    const cColors = [0x6ba85a, 0xe8a445, 0xc44545, 0x4a6fa5, 0xfff8e0];
+    for (let i = 0; i < 28; i++) {
+      const dot = this.add.rectangle(
+        Phaser.Math.Between(60, W - 60), Phaser.Math.Between(40, H - 100),
+        4, 4, cColors[i % cColors.length]
+      ).setDepth(34).setAlpha(0.9);
+      this.tweens.add({ targets: dot, y: dot.y - Phaser.Math.Between(60, 160), alpha: 0,
+        duration: 1400 + i * 50, delay: i * 30, ease: 'Quad.easeOut' });
+    }
+
+    // Phase B — 정적 (fade "자유다!" at 1.6s)
+    this.time.delayedCall(1600, () => {
+      this.tweens.add({ targets: clearTxt, alpha: 0, duration: 400 });
+    });
+
+    // Phase C — 교수 "F입니다." (3s)
+    this.time.delayedCall(3000, () => {
+      this.removeProfBubble();
+      this.profSprite.setTexture('profFront');
+      const RED = 0xcc2244, CREAM = 0xfff8e0, BDR = 0x3a1f0a;
+      const bw = 224, bh = 62, b = 5;
+      const bx = this.profPos.x;
+      const by = Math.max(bh / 2 + 4, this.profPos.y - 76 - bh / 2);
+      const bubble = this.add.container(bx, by).setDepth(35);
+      const g = this.add.graphics();
+      g.fillStyle(RED);  g.fillRect(-bw/2, -bh/2, bw, bh);
+      g.fillStyle(CREAM); g.fillRect(-bw/2 + b, -bh/2 + b, bw - b*2, bh - b*2);
+      g.fillStyle(RED);  g.fillTriangle(-bw/2 + 60, bh/2, -bw/2 + 88, bh/2, -bw/2 + 74, bh/2 + 16);
+      g.fillStyle(CREAM); g.fillTriangle(-bw/2 + 63, bh/2 - 1, -bw/2 + 85, bh/2 - 1, -bw/2 + 74, bh/2 + 11);
+      const ft = this.add.text(0, -1, 'F입니다.', {
+        fontFamily: "'NeoDunggeunmo', sans-serif",
+        fontSize: '18px', color: '#cc2244', align: 'center',
+        stroke: '#fff0f0', strokeThickness: 2,
+      }).setOrigin(0.5);
+      bubble.add([g, ft]);
+      bubble.setScale(0.6);
+      this.tweens.add({ targets: bubble, scale: 1, duration: 220, ease: 'Back.easeOut' });
+      this.time.delayedCall(400, () => {
+        this.tweens.add({ targets: bubble, x: bx + 5, duration: 60, yoyo: true, repeat: 4, ease: 'Linear' });
+      });
+    });
+
+    // Phase D — F 딱지 (4.5s)
+    this.time.delayedCall(4500, () => {
+      const fStamp = this.add.text(W/2, H/2, 'F', {
+        fontFamily: "'NeoDunggeunmo', sans-serif",
+        fontSize: '192px', color: '#cc2244',
+        stroke: '#880022', strokeThickness: 8,
+      }).setOrigin(0.5).setDepth(40).setScale(0.1).setAngle(-15);
+      this.tweens.add({ targets: fStamp, scale: 1, angle: -8, duration: 350, ease: 'Back.easeOut' });
+    });
+
+    // Phase E — 플레이어 "안돼에에에에" (6.5s)
+    this.time.delayedCall(6500, () => {
+      const CREAM = 0xfff8e0, BDR2 = 0x3a1f0a;
+      const bw2 = 220, bh2 = 58, b2 = 5;
+      const rawX = this.player ? this.player.x : W / 2;
+      const rawY = this.player ? this.player.y : H / 2;
+      const px = Math.max(bw2 / 2 + 10, Math.min(W - bw2 / 2 - 10, rawX));
+      const py = Math.max(bh2 / 2 + 10, rawY - 50);
+      const pb = this.add.container(px, py).setDepth(42);
+      const g2 = this.add.graphics();
+      g2.fillStyle(BDR2); g2.fillRect(-bw2/2, -bh2/2, bw2, bh2);
+      g2.fillStyle(CREAM); g2.fillRect(-bw2/2 + b2, -bh2/2 + b2, bw2 - b2*2, bh2 - b2*2);
+      g2.fillStyle(BDR2); g2.fillTriangle(-14/2 - 1, bh2/2, 14/2 + 1, bh2/2, 0, bh2/2 + 18);
+      g2.fillStyle(CREAM); g2.fillTriangle(-14/2 + b2 - 2, bh2/2 - 1, 14/2 - b2 + 2, bh2/2 - 1, 0, bh2/2 + 13);
+      const pt = this.add.text(0, -1, '안돼에에에에', {
+        fontFamily: "'NeoDunggeunmo', sans-serif",
+        fontSize: '16px', color: '#3a1f0a', align: 'center',
+      }).setOrigin(0.5);
+      pb.add([g2, pt]);
+      pb.setScale(0.6);
+      this.tweens.add({ targets: pb, scale: 1, duration: 220, ease: 'Back.easeOut' });
+      this.time.delayedCall(300, () => {
+        this.tweens.add({ targets: pb, x: px + 5, duration: 80, yoyo: true, repeat: 6, ease: 'Linear' });
+      });
+    });
+
+    // Phase F — 페이드 아웃 + 마무리 (8.5s)
+    this.time.delayedCall(8500, () => {
+      const fadeRect = this.add.rectangle(W/2, H/2, W, H, 0x000000).setDepth(50).setAlpha(0);
+      this.tweens.add({ targets: fadeRect, alpha: 1, duration: 2000, ease: 'Linear' });
+      this.time.delayedCall(1200, () => {
+        const et = this.add.text(W/2, H/2 - 18, '다음 학기에 만나요', {
+          fontFamily: "'NeoDunggeunmo', sans-serif",
+          fontSize: '20px', color: '#ffffff',
+        }).setOrigin(0.5).setDepth(51).setAlpha(0);
+        this.tweens.add({ targets: et, alpha: 1, duration: 800 });
+        const ch = this.add.text(W/2, H/2 + 20, '[ 클릭하여 처음으로 ]', {
+          fontFamily: "'NeoDunggeunmo', sans-serif",
+          fontSize: '13px', color: '#999999',
+        }).setOrigin(0.5).setDepth(51).setAlpha(0);
+        this.tweens.add({ targets: ch, alpha: 1, duration: 800, delay: 500 });
+      });
+      this.time.delayedCall(2200, () => {
+        this.input.once('pointerdown', () => {
+          this.cameras.main.fadeOut(400, 0, 0, 0);
+          this.time.delayedCall(400, () => this.scene.start('TitleScene'));
+        });
+      });
+    });
+  }
 }
 
 // ════════════════════════════════════════════════════════
@@ -1641,6 +1756,27 @@ const config = {
 document.fonts.load("16px 'NeoDunggeunmo'").then(() => {
   window._phaserGame = new Phaser.Game(config);
 });
+
+window.__triggerEnding = () => {
+  const game = window._phaserGame;
+  if (!game) { console.warn('__triggerEnding: game not ready'); return; }
+  const gs = game.scene.getScene('GameScene');
+  if (gs && gs.sys.isActive() && !gs.hasWon) {
+    gs.hasWon = true;
+    gs.canMove = false;
+    gs.playFTwistEnding();
+  } else {
+    game.scene.stop('TitleScene');
+    game.scene.start('GameScene', { period: 5 });
+    const wait = () => {
+      const s = game.scene.getScene('GameScene');
+      if (s && s.sys.isActive() && s.period === 5) {
+        s.hasWon = true; s.canMove = false; s.playFTwistEnding();
+      } else { setTimeout(wait, 100); }
+    };
+    setTimeout(wait, 600);
+  }
+};
 </script>
 </body>
 </html>
