@@ -17,7 +17,9 @@
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: linear-gradient(180deg, #fde8c4 0%, #f0d4a0 60%, #e8c690 100%);
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.38), rgba(0,0,0,0.55)),
+      url('assets/forest-bg.jpg') center/cover no-repeat fixed;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -38,7 +40,7 @@
   .side-panel {
     width: 190px;
     flex-shrink: 0;
-    background: linear-gradient(180deg, #fdf5e4 0%, #f0e0c0 100%);
+    background: linear-gradient(180deg, rgba(253,245,228,0.92) 0%, rgba(240,224,192,0.92) 100%);
     border: 3px solid #8b5a2b;
     border-radius: 6px;
     padding: 14px 12px;
@@ -166,10 +168,11 @@
   #credit-line {
     margin-top: 10px;
     font-size: 11px;
-    color: #8b5a2b;
+    color: #f5e6c8;
     text-align: center;
     font-family: 'NeoDunggeunmo', sans-serif;
-    opacity: 0.8;
+    opacity: 0.9;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
   }
   @media (max-width: 720px) {
     body { padding: 8px 6px; }
