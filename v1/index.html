@@ -1403,18 +1403,8 @@ class GameScene extends Phaser.Scene {
     this.friendSprite.setTexture('friendHand');
     if (this.friendHint) this.friendHint.setVisible(false);
 
-    // Pause TAs for 4 seconds — period 5 targets the exit-blocking TA specifically
-    let pausedTAs;
-    if (this.period === 5) {
-      pausedTAs = this.tas.filter(ta => ta.exitBlocker);
-    } else {
-      const friendRow = (this.friendSeat || FRIEND_SEAT)[1];
-      pausedTAs = this.tas.filter(ta => ta.axis !== 'v' && ta.row === friendRow + 1);
-      if (pausedTAs.length === 0) {
-        const below = this.tas.filter(ta => ta.axis !== 'v' && ta.row > friendRow).sort((a, b) => a.row - b.row);
-        if (below.length > 0) pausedTAs = [below[0]];
-      }
-    }
+    // Pause TAs for 4 seconds — all TAs including exit-blocker
+    const pausedTAs = this.tas;
     pausedTAs.forEach(ta => {
       ta.taPaused = true;
       ta.taPauseIcon = this.add.text(ta.sprite.x, ta.sprite.y - 20, '⏸', {
