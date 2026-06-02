@@ -530,10 +530,6 @@ function generateTextures(scene) {
   g.fillStyle(0x88cc44); g.fillRect(6,0,TILE-12,3);
   g.generateTexture('exit', TILE, TILE); g.clear();
 
-  // ─── PROFESSOR FRONT ───
-  drawProfessor(g, true);
-  g.generateTexture('profFront', TILE, TILE); g.clear();
-
   // ─── PROFESSOR BACK ───
   drawProfessor(g, false);
   g.generateTexture('profBack', TILE, TILE); g.clear();
@@ -575,6 +571,7 @@ function generateTextures(scene) {
     hoodie: 0x8b3030, hoodieD: 0x5a1a1a,
     skin: PAL.playerSkin, hair: 0x1a1a1a,
     hasBag: false,
+    outlineColor: 0xcc3333,
   });
   g.generateTexture('ta', TILE, TILE); g.clear();
 
@@ -586,6 +583,7 @@ function generateTextures(scene) {
       skin: PAL.playerSkin,
       hair: PAL.studentHairs[i],
       hasBag: false,
+      glasses: i % 3 === 0,
     });
     g.generateTexture('npc' + i, TILE, TILE); g.clear();
   }
@@ -663,7 +661,9 @@ function drawProfessor(g, facingFront, angry = false) {
 }
 
 function drawStudent(g, opts) {
-  const { hoodie, hoodieD, skin, hair, hasBag, handUp, hatColor, outlineColor } = opts;
+  const { hoodie, hoodieD, skin, hair, hasBag, handUp, hatColor, outlineColor, glasses } = opts;
+  const hairHL  = shade(hair, 0.35);
+  const hoodieHL = shade(hoodie, 0.22);
   if (outlineColor) {
     g.lineStyle(2, outlineColor, 1);
     g.strokeRect(2, 0, 28, 32);
@@ -674,30 +674,56 @@ function drawStudent(g, opts) {
     g.fillRect(7, 7, 18, 2);
     g.fillStyle(shade(hatColor, -0.25));
     g.fillRect(9, 1, 14, 2);
+    g.fillStyle(shade(hatColor, 0.2));
+    g.fillRect(11, 3, 5, 1);
   } else {
     g.fillStyle(hair);
     g.fillRect(9, 2, 14, 7);
     g.fillRect(8, 4, 16, 5);
+    g.fillStyle(hairHL);
+    g.fillRect(12, 3, 4, 2);
   }
   g.fillStyle(skin);
   g.fillRect(10, 7, 12, 9);
   g.fillStyle(skin);
   g.fillRect(8, 10, 2, 3);
   g.fillRect(22, 10, 2, 3);
+  g.fillStyle(shade(skin, -0.1));
+  g.fillRect(10, 7, 1, 8);
+  g.fillRect(21, 7, 1, 8);
   g.fillStyle(hair);
   g.fillRect(9, 7, 2, 3);
   g.fillRect(21, 7, 2, 3);
   g.fillStyle(0x1a1a1a);
   g.fillRect(12, 11, 2, 2);
   g.fillRect(18, 11, 2, 2);
+  g.fillStyle(0xffffff);
+  g.fillRect(13, 11, 1, 1);
+  g.fillRect(19, 11, 1, 1);
+  if (glasses) {
+    g.fillStyle(0x2a2a2a);
+    g.fillRect(11, 10, 4, 4);
+    g.fillRect(17, 10, 4, 4);
+    g.fillRect(15, 11, 2, 1);
+    g.fillStyle(0xb0ccdd);
+    g.fillRect(12, 11, 2, 2);
+    g.fillRect(18, 11, 2, 2);
+    g.fillStyle(0x1a1a1a);
+    g.fillRect(12, 11, 1, 1);
+    g.fillRect(18, 11, 1, 1);
+  }
   g.fillStyle(0x6b4423);
   g.fillRect(15, 14, 2, 1);
   g.fillStyle(skin);
   g.fillRect(13, 16, 6, 2);
+  g.fillStyle(0xfafafa);
+  g.fillRect(13, 17, 6, 1);
   g.fillStyle(hoodie);
   g.fillRect(6, 17, 20, 10);
   g.fillStyle(hoodieD);
   g.fillRect(6, 17, 20, 2);
+  g.fillStyle(hoodieHL);
+  g.fillRect(7, 18, 3, 2);
   g.fillStyle(0xf0e0c0);
   g.fillRect(15, 19, 1, 4);
   g.fillRect(17, 19, 1, 4);
@@ -721,6 +747,8 @@ function drawStudent(g, opts) {
     g.fillRect(24, 18, 5, 8);
     g.fillStyle(0x3a2010);
     g.fillRect(24, 18, 5, 2);
+    g.fillStyle(shade(PAL.playerBag, 0.2));
+    g.fillRect(24, 19, 2, 3);
   }
   g.fillStyle(0x2a3a5a);
   g.fillRect(8, 27, 6, 5);
@@ -848,6 +876,10 @@ class GameScene extends Phaser.Scene {
 
   init(data) {
     this.period = data.period || 1;
+  }
+
+  preload() {
+    this.load.image('professorPNG', 'assets/professor.png');
   }
 
   create() {
@@ -1240,7 +1272,7 @@ class GameScene extends Phaser.Scene {
     this.inGrace = false;
     this.graceTimer = 0;
 
-    this.profSprite.setTexture('profBack');
+    this.profSprite.setTexture('profBack').setDisplaySize(TILE, TILE);
     this.setPhaseUI('move');
     this.removeProfBubble();
     if (!initial) {
@@ -1257,7 +1289,7 @@ class GameScene extends Phaser.Scene {
     this.canMove = false;
     this.profLooking = true;
 
-    this.profSprite.setTexture(suspicion ? 'profAngry' : 'profFront');
+    this.profSprite.setTexture(suspicion ? 'profAngry' : 'professorPNG').setDisplaySize(TILE, TILE);
     this.setPhaseUI(suspicion ? 'suspicion' : 'stop');
     this.showBigBanner('STOP!', '#ffffff', 0xc44545);
 
@@ -1280,7 +1312,7 @@ class GameScene extends Phaser.Scene {
     this.profLooking = false;
     this.inGrace = false;
 
-    this.profSprite.setTexture('profFront');
+    this.profSprite.setTexture('professorPNG').setDisplaySize(TILE, TILE);
     this.profSprite.setFlipX(false);
     this.setPhaseUI('distract');
     this.showBigBanner('CHANCE!', '#ffffff', 0xe8a445);
@@ -1772,7 +1804,7 @@ class GameScene extends Phaser.Scene {
     // Phase C — 교수 "F입니다." (3s)
     this.time.delayedCall(3000, () => {
       this.removeProfBubble();
-      this.profSprite.setTexture('profFront');
+      this.profSprite.setTexture('professorPNG').setDisplaySize(TILE, TILE);
       const RED = 0xcc2244, CREAM = 0xfff8e0, BDR = 0x3a1f0a;
       const bw = 224, bh = 62, b = 5;
       const bx = this.profPos.x;
