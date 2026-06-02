@@ -18,5 +18,14 @@ module.exports = {
       autorestart: true,
       watch: false,
     },
+    {
+      name: 'escape-the-lecture-v1-final',
+      script: 'bun',
+      args: 'run server.ts',
+      cwd: '/home/deploy/escape-the-lecture/v1-final',
+      env: { NODE_ENV: 'production' },
+      autorestart: true,
+      watch: false,
+    },
   ],
 };

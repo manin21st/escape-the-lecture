@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>강의실 탈출 — Escape the Lecture</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  @font-face {
+    font-family: 'NeoDunggeunmo';
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+    src: url('https://cdn.jsdelivr.net/gh/neodgm/neodgm-webfont/neodgm/neodgm.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/gh/neodgm/neodgm-webfont/neodgm/neodgm.woff') format('woff');
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.38), rgba(0,0,0,0.55)),
+      url('assets/forest-bg.jpg') center/cover no-repeat fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'NeoDunggeunmo', sans-serif;
+    overflow: auto;
+    padding: 20px 12px;
+  }
+  #page-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+  }
+  .side-panel {
+    width: 190px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, rgba(253,245,228,0.92) 0%, rgba(240,224,192,0.92) 100%);
+    border: 3px solid #8b5a2b;
+    border-radius: 6px;
+    padding: 14px 12px;
+    box-shadow: 0 4px 16px rgba(60,30,10,0.25), inset 0 0 0 1px #c9a778;
+    font-family: 'NeoDunggeunmo', sans-serif;
+    font-size: 13px;
+    color: #4a2c1a;
+    line-height: 1.75;
+    align-self: stretch;
+  }
+  .side-panel h3 {
+    font-size: 14px;
+    color: #6b4423;
+    border-bottom: 2px solid #8b5a2b;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0 #fff5d8;
+  }
+  .key-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .key-badge {
+    background: #d4a574;
+    border: 2px solid #6b4423;
+    border-radius: 3px;
+    padding: 2px 5px;
+    font-size: 11px;
+    white-space: nowrap;
+    box-shadow: 0 1px 0 #6b4423;
+    flex-shrink: 0;
+    color: #3a1a0a;
+  }
+  .key-desc {
+    font-size: 12px;
+    color: #5a3a1a;
+    line-height: 1.5;
+  }
+  .panel-body {
+    font-size: 12px;
+    color: #5a3a1a;
+    line-height: 1.65;
+    margin-bottom: 10px;
+  }
+  .panel-credit {
+    margin-top: 14px;
+    font-size: 11px;
+    color: #8b5a2b;
+    border-top: 1px solid #c9a778;
+    padding-top: 8px;
+  }
+  @media (max-width: 1100px) {
+    .side-panel { display: none; }
+  }
+  #game-frame {
+    position: relative;
+    background: linear-gradient(135deg, #8b5a2b 0%, #6b4423 100%);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow:
+      0 10px 32px rgba(60,30,10,0.4),
+      inset 0 0 0 2px #c9a778,
+      inset 0 0 0 4px #6b4423;
+    flex-shrink: 0;
+  }
+  #game-inner {
+    background: #f5ebd6;
+    border: 3px solid #4a2c1a;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  canvas { display: block; image-rendering: pixelated; }
+  #bottom-hud {
+    background: linear-gradient(180deg, #d4a574 0%, #b58a5a 100%);
+    padding: 11px 18px;
+    border-top: 3px solid #8b5a2b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'NeoDunggeunmo', sans-serif;
+    font-size: 14px;
+    color: #3a1f0a;
+    font-weight: bold;
+  }
+  .hud-pill {
+    background: #f8f0d8;
+    border: 2px solid #6b4423;
+    border-radius: 6px;
+    padding: 5px 12px;
+    box-shadow: 0 2px 0 #8b5a2b;
+    white-space: nowrap;
+  }
+  #phase-indicator {
+    background: #6ba85a;
+    color: #fff8e0;
+    border: 2px solid #4a7a3a;
+    border-radius: 6px;
+    padding: 6px 16px;
+    box-shadow: 0 2px 0 #2c4a1a;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+  #phase-indicator.stop {
+    background: #c44545;
+    border-color: #8b2c2c;
+    box-shadow: 0 2px 0 #5a1a1a;
+  }
+  #phase-indicator.distract {
+    background: #e8a445;
+    border-color: #a87020;
+    box-shadow: 0 2px 0 #5a3810;
+  }
+  #phase-indicator.suspicion {
+    background: #c44545;
+    border-color: #8b2c2c;
+    box-shadow: 0 2px 0 #5a1a1a;
+    animation: pulse-bg 0.5s infinite alternate;
+  }
+  @keyframes pulse-bg {
+    from { background: #c44545; }
+    to   { background: #ff5050; }
+  }
+  #credit-line {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #f5e6c8;
+    text-align: center;
+    font-family: 'NeoDunggeunmo', sans-serif;
+    opacity: 0.9;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  }
+  @media (max-width: 720px) {
+    body { padding: 8px 6px; }
+    #game-frame {
+      padding: 6px;
+      max-width: 100%;
+      width: 100%;
+      flex-shrink: 1;
+    }
+    #game-inner {
+      width: 100%;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto !important;
+    }
+    #bottom-hud {
+      font-size: 12px;
+      padding: 8px 10px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="page-wrapper">
+  <div class="side-panel" id="left-panel">
+    <h3>[조작법]</h3>
+    <div class="key-row">
+      <span class="key-badge">드래그</span>
+      <span class="key-desc">마우스 드래그로<br>이동 경로 지정</span>
+    </div>
+    <div class="key-row">
+      <span class="key-badge">클릭</span>
+      <span class="key-desc">친구 클릭 →<br>교수님 질문 유도</span>
+    </div>
+    <div class="key-row">
+      <span class="key-badge">[문]</span>
+      <span class="key-desc">초록 출구로<br>탈출하면 성공!</span>
+    </div>
+    <div class="key-row">
+      <span class="key-badge">STOP</span>
+      <span class="key-desc">교수님이 돌아보면<br>반드시 멈춰야 함</span>
+    </div>
+    <div class="key-row">
+      <span class="key-badge">TA</span>
+      <span class="key-desc">2교시부터 조교 등장<br>시야(노란 삼각형) 주의</span>
+    </div>
+  </div>
+  <div id="game-frame">
+    <div id="game-inner">
+      <div id="game-container"></div>
+      <div id="bottom-hud">
+        <div class="hud-pill" id="period-info">1교시</div>
+        <div id="phase-indicator">[보드] 이동 가능</div>
+        <div class="hud-pill" id="exit-info">[문] 뒷쪽 출구</div>
+      </div>
+    </div>
+  </div>
+  <div class="side-panel" id="right-panel">
+    <h3>[Artist Statement]</h3>
+    <p class="panel-body">대학교 강의실에서 몰래 빠져나가려는 학생의 작은 모험.</p>
+    <p class="panel-body">들키지 않고 출구로 가는 retro pixel RPG.</p>
+    <p class="panel-body">교수님의 시선을 피하고, 친구의 도움을 받으며, 5교시를 모두 탈출하면 자유!</p>
+    <div class="panel-credit">— [학생 이름] 2026</div>
+    <p class="panel-body" style="margin-top:0.8em;">본 프로젝트는 <strong>ChatGPT</strong> 와 <strong>Claude</strong> 를 활용하여 제작하였습니다.</p>
+    <p class="panel-body" style="margin-top:0; opacity:0.85; font-size:0.88em;">— <strong>ChatGPT</strong>: 게임기획, 프롬프트<br>— <strong>Claude</strong>: UI, 코드구현</p>
+  </div>
+</div>
+<div id="credit-line">본 프로젝트는 ChatGPT 와 Claude 를 활용하여 제작하였다</div>
+<script>
+// ════════════════════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════════════════════
+const TILE = 32;
+const COLS = 20;
+const ROWS = 16;
+const W = COLS * TILE;
+const H = ROWS * TILE;
+
+const T = { FLOOR:0, WALL:1, DESK:2, EXIT:3, PPT:4, PODIUM:5 };
+
+const PAL = {
+  floor:     0xd8b88a,
+  floorAlt:  0xcaa97a,
+  floorLine: 0xa87f55,
+  wall:      0xe8d5b0,
+  wallTop:   0xb58a5a,
+  wallDark:  0x8b5a2b,
+  wallShadow:0x6b4423,
+  deskWood:  0xa87042,
+  deskTop:   0xd4a574,
+  deskEdge:  0x6b4423,
+  deskGrain: 0x8b5a2b,
+  notebook:  0xf8f0d8,
+  notebookLine: 0xa8b8c8,
+  pptFrame:  0x4a2c1a,
+  pptScreen: 0xf8f4e0,
+  pptHeader: 0xc44545,
+  pptText:   0x4a6fa5,
+  pptSub:    0x6a8aaa,
+  podiumDark:0x6b4423,
+  podiumTop: 0xa87042,
+  podiumPaper:0xfff8e0,
+  exitFrame: 0x5a3a1a,
+  exitDoor:  0x6b8e4a,
+  exitDoorL: 0x88aa66,
+  exitHandle:0xe0c050,
+  profShirt: 0x4a6fa5,
+  profShirtD:0x365080,
+  profVest:  0x5a3a1a,
+  profPants: 0x2c3e50,
+  profSkin:  0xf0c89c,
+  profSkinD: 0xc8a07a,
+  profHair:  0x8a8a8a,
+  profHairD: 0x6a6a6a,
+  profGlasses: 0x2c2c2c,
+  profLens:  0xc8d8e8,
+  playerHoodie: 0xc08854,
+  playerHoodieD:0x8b5a2b,
+  playerSkin:   0xf0c89c,
+  playerHair:   0x4a2c1a,
+  playerBag:    0x6a4a2a,
+  friendHoodie: 0x6aa8aa,
+  friendHoodieD:0x4a8088,
+  friendHair:   0x2a1a1a,
+  studentColors: [
+    0xa85a5a, 0x5a8aaa, 0x6aa86a, 0xa88a5a, 0x8a6aaa,
+    0xaa8a3a, 0x5a6aaa, 0xa86aa8, 0x7a8a4a, 0xa8704a,
+  ],
+  studentHairs: [
+    0x4a2c1a, 0x2a1a0a, 0x6a4a2a, 0x8a5a3a, 0x3a2a1a,
+    0xa88a5a, 0x5a3a1a, 0x4a3020, 0x2a2010, 0x6a5a3a,
+  ],
+};
+
+// ════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════
+const PERIODS = {
+  1: { moveTime: 5.5, stopTime: 1.8, suspChance: 0,    friend: false, label: '1교시 — 알고리즘 입문' },
+  2: { moveTime: 4.5, stopTime: 2.1, suspChance: 0,    friend: true,  label: '2교시 — 자료구조' },
+  3: { moveTime: 3.8, stopTime: 2.4, suspChance: 0,    friend: true,  label: '3교시 — 동적 프로그래밍' },
+  4: { moveTime: 3.2, stopTime: 2.6, suspChance: 0.30, friend: true,  label: '4교시 — 그래프 이론' },
+  5: { moveTime: 3.0, stopTime: 2.4, suspChance: 0.30, friend: true,  label: '5교시 — 마지막 강의' },
+};
+
+// Exit tile positions per period (row, col) — each period has a different exit location
+const EXIT_POSITIONS = {
+  1: { row: 14, col: 17 }, // back right — easy, close to player start
+  2: { row: 14, col: 14 }, // back right-center — far from player start (col 2)
+  3: { row: 7,  col: 1  }, // left aisle midway — need to cross TA row
+  4: { row: 7,  col: 18 }, // right aisle midway — opposite corner
+  5: { row: 3,  col: 18 }, // near front right — must traverse entire room
+};
+
+// TA patrol rows per period (aisle rows only)
+const TA_ROWS = {
+  2: [13],
+  3: [13, 10],
+  4: [13, 10, 7],
+  5: [13, 10, 7, 4],
+};
+
+// Sparse lecture lines shown during MOVE phase (long interval)
+const LECTURES = {
+  1: ["오늘은 알고리즘 기초부터 시작합니다.", "화면을 잘 보세요."],
+  2: ["2교시 시작합니다.", "집중해주세요."],
+  3: ["동적 프로그래밍 시작합니다.", "메모이제이션, 중요합니다."],
+  4: ["그래프 이론 시작합니다.", "BFS, DFS 차이 아시죠?"],
+  5: ["마지막 강의입니다.", "기말고사 범위 정리합니다."],
+};
+
+const FRIEND_QUESTIONS = [
+  "교수님, 질문 있습니다!",
+  "이 부분 다시 설명해주세요!",
+  "교수님, 시험 범위 어디까지인가요?",
+  "이거 과제에 나오나요?",
+  "교수님, 화장실 좀...",
+];
+
+const PROF_ANSWERS = [
+  "음... 좋은 질문이에요. 잠깐만요.",
+  "아, 그건 이렇게 보시면 됩니다...",
+  "거기 학생, 뒷자리도 잘 들어요.",
+  "다시 한번 설명해드릴게요.",
+  "잠시만, 다음 슬라이드에서 다룹니다.",
+];
+
+const WATCH_LINES = [
+  "잠깐, 조용히 해주세요.",
+  "자, 다들 집중!",
+  "이 부분 중요합니다.",
+  "여러분, 이쪽 보세요.",
+];
+
+const SUSPICION_LINES = [
+  "거기, 뒤에 누가 일어났어요?!",
+  "어, 학생, 어디 가는 거예요?",
+  "수업 중에 어딜 가요!",
+  "잠깐, 거기 멈춰요!",
+  "출석 점수 깎입니다!",
+];
+
+const EXIT_PROXIMITY_LINES = [
+  "어이 학생, 어디 가요?",
+  "거기... 혹시 나가려고요?",
+  "뒤에 누구 일어섰나요?",
+];
+
+const CAUGHT_LINES = [
+  ["들켰다!",      "출석 점수 -10점..."],
+  ["걸렸다!",      "교수님과 눈이 마주쳤다."],
+  ["발각!",        "조용히 자리로 돌아가세요."],
+  ["붙잡혔다!",    "다음 시간엔 더 조심하자."],
+  ["딱 걸렸어!",   "교수님이 노려보고 있다..."],
+];
+
+const WIN_LINES = {
+  1: ["1교시 클리어!",  "다음은 2교시 — 친구가 도와줄 거야."],
+  2: ["2교시 통과!",    "친구야 고마워. 너 덕분에 살았다."],
+  3: ["3교시 돌파!",    "두 교시만 더 버티면 끝이다."],
+  4: ["4교시 클리어!",  "마지막 강의가 남았다... 긴장하자."],
+  5: ["자유다!",        "오늘 수업은 여기까지! 카페로 도망!"],
+};
+
+// NPC seats — student tiles per row
+const NPC_SEATS = [
+  [2,6],[3,6],[5,6],[6,6],[8,6],[9,6],[11,6],[12,6],[14,6],[15,6],
+  [2,9],[3,9],[5,9],[6,9],[8,9],[9,9],[11,9],[12,9],[14,9],[15,9],
+  [5,12],[6,12],[8,12],[9,12],[11,12],[12,12],[14,12],[15,12],
+];
+const PLAYER_SEAT = [2, 12];
+const FRIEND_SEAT = [3, 12];
+
+// Build grid with exit at period-specific position
+function buildGrid(period) {
+  const g = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,4,4,4,4,4,4,4,4,4,4,0,5,5,5,0,0,0,1],
+    [1,0,4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  ];
+  const ep = EXIT_POSITIONS[period] || EXIT_POSITIONS[1];
+  g[ep.row][ep.col] = T.EXIT;
+  return g;
+}
+
+// ════════════════════════════════════════════════════════
+// PIXEL ART HELPERS
+// ════════════════════════════════════════════════════════
+function drawPixelHeart(g, x, y, color, s) {
+  s = s || 2;
+  const p = [
+    [0,1,1,0,1,1,0],
+    [1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1],
+    [0,1,1,1,1,1,0],
+    [0,0,1,1,1,0,0],
+    [0,0,0,1,0,0,0],
+  ];
+  g.fillStyle(color);
+  for (let py = 0; py < p.length; py++) {
+    for (let px2 = 0; px2 < p[py].length; px2++) {
+      if (p[py][px2]) g.fillRect(x + px2 * s, y + py * s, s, s);
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// TEXTURE GENERATOR — cozy pixel art
+// ════════════════════════════════════════════════════════
+function generateTextures(scene) {
+  const g = scene.make.graphics({x:0,y:0,add:false});
+
+  // ─── FLOOR (wood plank) ───
+  g.fillStyle(PAL.floor); g.fillRect(0,0,TILE,TILE);
+  g.fillStyle(PAL.floorAlt); g.fillRect(0,0,TILE,2);
+  g.fillStyle(PAL.floorLine);
+  g.fillRect(0,16,TILE,1);
+  g.fillRect(6,5,1,1); g.fillRect(20,8,1,1); g.fillRect(11,22,1,1); g.fillRect(26,26,1,1);
+  g.fillRect(2,12,1,1); g.fillRect(15,28,1,1); g.fillRect(28,18,1,1);
+  g.generateTexture('floor', TILE, TILE); g.clear();
+
+  // ─── FLOOR ALT ───
+  g.fillStyle(PAL.floorAlt); g.fillRect(0,0,TILE,TILE);
+  g.fillStyle(PAL.floor); g.fillRect(0,0,TILE,2);
+  g.fillStyle(PAL.floorLine);
+  g.fillRect(0,16,TILE,1);
+  g.fillRect(4,7,1,1); g.fillRect(18,11,1,1); g.fillRect(24,24,1,1); g.fillRect(9,26,1,1);
+  g.generateTexture('floor2', TILE, TILE); g.clear();
+
+  // ─── WALL ───
+  g.fillStyle(PAL.wall); g.fillRect(0,0,TILE,TILE);
+  g.fillStyle(PAL.wallTop); g.fillRect(0,0,TILE,8);
+  g.fillStyle(PAL.wallDark); g.fillRect(0,7,TILE,1);
+  g.fillStyle(PAL.wallShadow); g.fillRect(0,TILE-3,TILE,3);
+  g.fillStyle(0xd8c090); g.fillRect(0,12,TILE,1); g.fillRect(0,22,TILE,1);
+  g.generateTexture('wall', TILE, TILE); g.clear();
+
+  // ─── DESK ───
+  g.fillStyle(PAL.deskWood); g.fillRect(0,0,TILE,TILE);
+  g.fillStyle(PAL.deskTop);  g.fillRect(0,0,TILE,18);
+  g.fillStyle(PAL.deskGrain); g.fillRect(0,6,TILE,1); g.fillRect(0,12,TILE,1);
+  g.fillStyle(PAL.deskEdge); g.fillRect(0,17,TILE,2);
+  g.fillStyle(PAL.deskEdge); g.fillRect(0,TILE-3,TILE,3);
+  g.fillStyle(PAL.notebook); g.fillRect(6,4,12,9);
+  g.fillStyle(PAL.notebookLine);
+  g.fillRect(8,6,8,1); g.fillRect(8,8,7,1); g.fillRect(8,10,9,1);
+  g.fillStyle(0xe0c060); g.fillRect(20,5,8,1);
+  g.fillStyle(0x8b4513); g.fillRect(27,5,2,1);
+  g.generateTexture('desk', TILE, TILE); g.clear();
+
+  // ─── PPT SCREEN ───
+  g.fillStyle(PAL.pptFrame); g.fillRect(0,0,TILE,TILE);
+  g.fillStyle(PAL.pptScreen); g.fillRect(0,2,TILE,TILE-4);
+  g.fillStyle(PAL.pptHeader); g.fillRect(2,4,TILE-4,2);
+  g.fillStyle(PAL.pptText);
+  g.fillRect(2,9,TILE-6,1); g.fillRect(2,13,TILE-10,1);
+  g.fillRect(2,17,TILE-8,1); g.fillRect(2,21,TILE-12,1);
+  g.fillStyle(PAL.pptSub);
+  g.fillRect(2,25,TILE-14,1);
+  g.fillStyle(0x2a1a08); g.fillRect(0,TILE-2,TILE,2);
+  g.generateTexture('ppt', TILE, TILE); g.clear();
+
+  // ─── PODIUM ───
+  g.fillStyle(PAL.podiumDark); g.fillRect(0,0,TILE,TILE);
+  g.fillStyle(PAL.podiumTop);  g.fillRect(2,2,TILE-4,14);
+  g.fillStyle(0xc9a778); g.fillRect(2,2,TILE-4,3);
+  g.fillStyle(PAL.podiumPaper); g.fillRect(8,5,16,8);
+  g.fillStyle(0x8b5a2b); g.fillRect(9,7,12,1); g.fillRect(9,10,10,1);
+  g.fillStyle(0x4a2c1a); g.fillRect(0,16,TILE,2);
+  g.fillStyle(PAL.podiumDark); g.fillRect(0,TILE-4,TILE,4);
+  g.generateTexture('podium', TILE, TILE); g.clear();
+
+  // ─── EXIT (wooden door) ───
+  g.fillStyle(PAL.floor); g.fillRect(0,0,TILE,TILE);
+  g.fillStyle(PAL.exitFrame); g.fillRect(3,1,TILE-6,TILE-2);
+  g.fillStyle(PAL.exitDoor);  g.fillRect(5,3,TILE-10,TILE-6);
+  g.fillStyle(PAL.exitDoorL); g.fillRect(5,3,TILE-10,3);
+  g.fillStyle(0x4a6a30); g.fillRect(5,15,TILE-10,1);
+  g.fillStyle(PAL.exitHandle); g.fillRect(TILE-10,15,3,3);
+  g.fillStyle(0x8a7530); g.fillRect(TILE-10,17,3,1);
+  g.fillStyle(0x88cc44); g.fillRect(6,0,TILE-12,3);
+  g.generateTexture('exit', TILE, TILE); g.clear();
+
+  // ─── PROFESSOR BACK ───
+  drawProfessor(g, false);
+  g.generateTexture('profBack', TILE, TILE); g.clear();
+
+  // ─── PROFESSOR SUSPICIOUS ───
+  drawProfessor(g, true, true);
+  g.generateTexture('profAngry', TILE, TILE); g.clear();
+
+  // ─── PLAYER ───
+  drawStudent(g, {
+    hoodie: PAL.playerHoodie, hoodieD: PAL.playerHoodieD,
+    skin: PAL.playerSkin, hair: PAL.playerHair,
+    hasBag: true, hatColor: 0xcc2244,
+    outlineColor: 0x000000,
+  });
+  g.generateTexture('player', TILE, TILE); g.clear();
+
+  // ─── FRIEND ───
+  drawStudent(g, {
+    hoodie: PAL.friendHoodie, hoodieD: PAL.friendHoodieD,
+    skin: PAL.playerSkin, hair: PAL.friendHair,
+    hasBag: false,
+    outlineColor: 0x33aa33,
+  });
+  g.generateTexture('friend', TILE, TILE); g.clear();
+
+  // ─── FRIEND hand raised ───
+  drawStudent(g, {
+    hoodie: PAL.friendHoodie, hoodieD: PAL.friendHoodieD,
+    skin: PAL.playerSkin, hair: PAL.friendHair,
+    hasBag: false,
+    handUp: true,
+    outlineColor: 0x33aa33,
+  });
+  g.generateTexture('friendHand', TILE, TILE); g.clear();
+
+  // ─── TA (Teaching Assistant) — red hoodie ───
+  drawStudent(g, {
+    hoodie: 0x8b3030, hoodieD: 0x5a1a1a,
+    skin: PAL.playerSkin, hair: 0x1a1a1a,
+    hasBag: false,
+    outlineColor: 0xcc3333,
+  });
+  g.generateTexture('ta', TILE, TILE); g.clear();
+
+  // ─── STUDENT NPCs (10 variants) ───
+  for (let i = 0; i < 10; i++) {
+    drawStudent(g, {
+      hoodie: PAL.studentColors[i],
+      hoodieD: shade(PAL.studentColors[i], -0.3),
+      skin: PAL.playerSkin,
+      hair: PAL.studentHairs[i],
+      hasBag: false,
+      glasses: i % 3 === 0,
+    });
+    g.generateTexture('npc' + i, TILE, TILE); g.clear();
+  }
+
+  g.destroy();
+}
+
+function shade(hex, amt) {
+  const r = (hex >> 16) & 0xff, gC = (hex >> 8) & 0xff, b = hex & 0xff;
+  const f = (c) => Math.max(0, Math.min(255, Math.round(c * (1 + amt))));
+  return (f(r) << 16) | (f(gC) << 8) | f(b);
+}
+
+function drawProfessor(g, facingFront, angry = false) {
+  g.fillStyle(PAL.profHair);
+  g.fillRect(8, 1, 16, 6);
+  g.fillRect(7, 3, 18, 4);
+  g.fillStyle(PAL.profSkin);
+  g.fillRect(9, 5, 14, 11);
+  g.fillStyle(PAL.profHair);
+  g.fillRect(8, 5, 2, 7);
+  g.fillRect(22, 5, 2, 7);
+  g.fillStyle(PAL.profHairD);
+  g.fillRect(8, 1, 16, 2);
+  if (facingFront) {
+    g.fillStyle(PAL.profGlasses);
+    g.fillRect(10, 9, 5, 4);
+    g.fillRect(17, 9, 5, 4);
+    g.fillRect(15, 10, 2, 1);
+    g.fillStyle(PAL.profLens);
+    g.fillRect(11, 10, 3, 2);
+    g.fillRect(18, 10, 3, 2);
+    g.fillStyle(angry ? 0xc44545 : 0x1a1a1a);
+    g.fillRect(12, 11, 1, 1);
+    g.fillRect(19, 11, 1, 1);
+    g.fillStyle(angry ? 0x8b2c2c : 0x6b4423);
+    if (angry) g.fillRect(13, 14, 6, 1);
+    else g.fillRect(14, 14, 4, 1);
+    g.fillStyle(PAL.profSkinD);
+    g.fillRect(9, 13, 2, 2);
+    g.fillRect(21, 13, 2, 2);
+  } else {
+    g.fillStyle(PAL.profHair);
+    g.fillRect(9, 5, 14, 10);
+    g.fillStyle(PAL.profHairD);
+    g.fillRect(9, 5, 14, 3);
+    g.fillStyle(PAL.profSkin);
+    g.fillRect(8, 9, 1, 3);
+    g.fillRect(23, 9, 1, 3);
+  }
+  g.fillStyle(PAL.profSkin);
+  g.fillRect(13, 16, 6, 2);
+  g.fillStyle(0xfafafa);
+  g.fillRect(11, 17, 10, 2);
+  g.fillRect(14, 18, 4, 2);
+  g.fillStyle(angry ? 0xc44545 : PAL.profShirt);
+  g.fillRect(7, 19, 18, 8);
+  g.fillStyle(angry ? 0x8b2c2c : PAL.profShirtD);
+  g.fillRect(7, 19, 18, 2);
+  g.fillRect(7, 25, 18, 2);
+  g.fillStyle(PAL.profVest);
+  g.fillRect(15, 19, 2, 7);
+  g.fillStyle(angry ? 0xc44545 : PAL.profShirt);
+  g.fillRect(3, 20, 4, 6);
+  g.fillRect(25, 20, 4, 6);
+  g.fillStyle(PAL.profSkin);
+  g.fillRect(3, 25, 4, 2);
+  g.fillRect(25, 25, 4, 2);
+  g.fillStyle(PAL.profPants);
+  g.fillRect(9, 27, 6, 5);
+  g.fillRect(17, 27, 6, 5);
+  g.fillStyle(0x1a1a1a);
+  g.fillRect(8, 30, 7, 2);
+  g.fillRect(17, 30, 7, 2);
+}
+
+function drawStudent(g, opts) {
+  const { hoodie, hoodieD, skin, hair, hasBag, handUp, hatColor, outlineColor, glasses } = opts;
+  const hairHL  = shade(hair, 0.35);
+  const hoodieHL = shade(hoodie, 0.22);
+  if (outlineColor) {
+    g.lineStyle(2, outlineColor, 1);
+    g.strokeRect(2, 0, 28, 32);
+  }
+  if (hatColor) {
+    g.fillStyle(hatColor);
+    g.fillRect(9, 1, 14, 7);
+    g.fillRect(7, 7, 18, 2);
+    g.fillStyle(shade(hatColor, -0.25));
+    g.fillRect(9, 1, 14, 2);
+    g.fillStyle(shade(hatColor, 0.2));
+    g.fillRect(11, 3, 5, 1);
+  } else {
+    g.fillStyle(hair);
+    g.fillRect(9, 2, 14, 7);
+    g.fillRect(8, 4, 16, 5);
+    g.fillStyle(hairHL);
+    g.fillRect(12, 3, 4, 2);
+  }
+  g.fillStyle(skin);
+  g.fillRect(10, 7, 12, 9);
+  g.fillStyle(skin);
+  g.fillRect(8, 10, 2, 3);
+  g.fillRect(22, 10, 2, 3);
+  g.fillStyle(shade(skin, -0.1));
+  g.fillRect(10, 7, 1, 8);
+  g.fillRect(21, 7, 1, 8);
+  g.fillStyle(hair);
+  g.fillRect(9, 7, 2, 3);
+  g.fillRect(21, 7, 2, 3);
+  g.fillStyle(0x1a1a1a);
+  g.fillRect(12, 11, 2, 2);
+  g.fillRect(18, 11, 2, 2);
+  g.fillStyle(0xffffff);
+  g.fillRect(13, 11, 1, 1);
+  g.fillRect(19, 11, 1, 1);
+  if (glasses) {
+    g.fillStyle(0x2a2a2a);
+    g.fillRect(11, 10, 4, 4);
+    g.fillRect(17, 10, 4, 4);
+    g.fillRect(15, 11, 2, 1);
+    g.fillStyle(0xb0ccdd);
+    g.fillRect(12, 11, 2, 2);
+    g.fillRect(18, 11, 2, 2);
+    g.fillStyle(0x1a1a1a);
+    g.fillRect(12, 11, 1, 1);
+    g.fillRect(18, 11, 1, 1);
+  }
+  g.fillStyle(0x6b4423);
+  g.fillRect(15, 14, 2, 1);
+  g.fillStyle(skin);
+  g.fillRect(13, 16, 6, 2);
+  g.fillStyle(0xfafafa);
+  g.fillRect(13, 17, 6, 1);
+  g.fillStyle(hoodie);
+  g.fillRect(6, 17, 20, 10);
+  g.fillStyle(hoodieD);
+  g.fillRect(6, 17, 20, 2);
+  g.fillStyle(hoodieHL);
+  g.fillRect(7, 18, 3, 2);
+  g.fillStyle(0xf0e0c0);
+  g.fillRect(15, 19, 1, 4);
+  g.fillRect(17, 19, 1, 4);
+  g.fillStyle(hoodie);
+  if (handUp) {
+    g.fillRect(22, 8, 4, 11);
+    g.fillStyle(skin);
+    g.fillRect(22, 5, 4, 4);
+  } else {
+    g.fillRect(3, 18, 4, 8);
+  }
+  g.fillStyle(hoodie);
+  g.fillRect(3, 18, 4, 8);
+  g.fillStyle(skin);
+  g.fillRect(3, 25, 4, 2);
+  if (!handUp) {
+    g.fillRect(25, 25, 4, 2);
+  }
+  if (hasBag) {
+    g.fillStyle(PAL.playerBag);
+    g.fillRect(24, 18, 5, 8);
+    g.fillStyle(0x3a2010);
+    g.fillRect(24, 18, 5, 2);
+    g.fillStyle(shade(PAL.playerBag, 0.2));
+    g.fillRect(24, 19, 2, 3);
+  }
+  g.fillStyle(0x2a3a5a);
+  g.fillRect(8, 27, 6, 5);
+  g.fillRect(18, 27, 6, 5);
+  g.fillStyle(0x1a1a1a);
+  g.fillRect(7, 30, 7, 2);
+  g.fillRect(18, 30, 7, 2);
+}
+
+// ════════════════════════════════════════════════════════
+// TITLE SCENE
+// ════════════════════════════════════════════════════════
+class TitleScene extends Phaser.Scene {
+  constructor() { super('TitleScene'); }
+  create() {
+    const cx = W/2, cy = H/2;
+    this.add.rectangle(cx, cy, W, H, 0xf5ebd6);
+    const gg = this.add.graphics();
+    for (let y = 0; y < H; y += 18) {
+      gg.lineStyle(1, 0xe0d2b0, 0.6);
+      gg.lineBetween(0, y, W, y);
+    }
+
+    this.drawDoodle(80, 110, 0xc44545);
+    this.drawDoodle(W-80, 110, 0x4a6fa5);
+    this.drawBook(120, H-100);
+    this.drawApple(W-120, H-110);
+
+    this.add.text(cx, cy-150, '강의실 탈출', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '64px',
+      color: '#5a3a1a',
+      stroke: '#fff5d8',
+      strokeThickness: 6,
+    }).setOrigin(0.5);
+
+    this.add.text(cx, cy-90, 'ESCAPE THE LECTURE', {
+      fontFamily: "'Press Start 2P', monospace",
+      fontSize: '14px',
+      color: '#8b5a2b',
+    }).setOrigin(0.5);
+
+    this.add.rectangle(cx, cy+25, 480, 170, 0xfff8e0, 1)
+      .setStrokeStyle(3, 0x8b5a2b);
+    this.add.rectangle(cx, cy+25, 480, 170)
+      .setStrokeStyle(1, 0xc9a778)
+      .setFillStyle(0xfff8e0, 0)
+      .setScale(0.96, 0.94);
+
+    this.add.text(cx, cy-30, '몰래 강의실을 빠져나가자', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '22px',
+      color: '#8b2c2c',
+    }).setOrigin(0.5);
+
+    this.add.text(cx, cy+30, [
+      '[초록] 교수님이 칠판 볼 때 = 이동',
+      '[빨강] 교수님이 돌아보면 = 멈춰!',
+      '[친구] 2교시부터 클릭 → 질문 유도',
+      '[문]  뒷문(또는 앞문)으로 탈출!',
+    ], {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '17px',
+      color: '#4a2c1a',
+      align: 'center',
+      lineSpacing: 8,
+    }).setOrigin(0.5);
+
+    const btn = this.add.rectangle(cx, cy+150, 260, 52, 0x6ba85a)
+      .setStrokeStyle(4, 0x4a7a3a);
+    this.add.text(cx, cy+150, '강의실 입장', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '24px',
+      color: '#fff8e0',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+    btn.setInteractive({ useHandCursor: true });
+    btn.on('pointerover', () => btn.setFillStyle(0x88c878));
+    btn.on('pointerout',  () => btn.setFillStyle(0x6ba85a));
+    btn.on('pointerdown', () => {
+      this.cameras.main.fadeOut(400, 245, 230, 200);
+      this.time.delayedCall(400, () => this.scene.start('GameScene', { period: 1 }));
+    });
+    this.tweens.add({ targets: btn, scaleY: 1.04, scaleX: 1.02, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+    this.cameras.main.fadeIn(500, 245, 230, 200);
+
+    this.add.text(cx, H-22, 'v1 · cozy edition', {
+      fontFamily: "'Press Start 2P', monospace",
+      fontSize: '8px',
+      color: '#a87042',
+    }).setOrigin(0.5);
+  }
+
+  drawDoodle(x, y, color) {
+    const g = this.add.graphics();
+    g.fillStyle(color, 0.35);
+    g.fillCircle(x, y, 16);
+  }
+  drawBook(x, y) {
+    const g = this.add.graphics();
+    g.fillStyle(0x6b8e4a, 0.5);
+    g.fillRect(x-18, y-12, 36, 24);
+    g.fillStyle(0xfff8e0, 0.6);
+    g.fillRect(x-15, y-9, 30, 18);
+    g.fillStyle(0x4a6a30, 0.5);
+    g.fillRect(x-15, y-9, 30, 2);
+    g.fillRect(x-15, y, 30, 1);
+  }
+  drawApple(x, y) {
+    const g = this.add.graphics();
+    g.fillStyle(0xc44545, 0.5);
+    g.fillCircle(x, y, 14);
+    g.fillStyle(0x4a7a30, 0.6);
+    g.fillRect(x-1, y-18, 2, 5);
+    g.fillRect(x+1, y-16, 5, 3);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// GAME SCENE
+// ════════════════════════════════════════════════════════
+class GameScene extends Phaser.Scene {
+  constructor() { super('GameScene'); }
+
+  init(data) {
+    this.period = data.period || 1;
+  }
+
+  preload() {
+    this.load.image('professorPNG', 'assets/professor.png');
+  }
+
+  create() {
+    this.cameras.main.fadeIn(400, 245, 230, 200);
+    generateTextures(this);
+
+    this.cfg = PERIODS[this.period];
+    this.grid = buildGrid(this.period);
+
+    this.isDead       = false;
+    this.hasWon       = false;
+    this.canMove      = true;
+    this.profLooking  = false;
+    this.phase        = 'move';
+    this.phaseTimer   = 0;
+    this.phaseTotal   = this.cfg.moveTime;
+    this.graceTimer   = 0;
+    this.gracePeriod  = 0.35;
+    this.inGrace      = false;
+
+    this.friendUsedThisPeriod = false;
+    this.friendCooldown       = 0;
+
+    this.dragPath     = [];
+    this.isDragging   = false;
+    this.lastDragTile = { x: PLAYER_SEAT[0], y: PLAYER_SEAT[1] };
+    this.playerTileX  = PLAYER_SEAT[0];
+    this.playerTileY  = PLAYER_SEAT[1];
+    this.playerMoving = false;
+
+
+    this.exitProximityShown = false;
+    this.bobTick = 0;
+
+    this.buildMap();
+    this.spawnNPCs();
+    this.spawnPlayer();
+    this.spawnProfessor();
+    this.spawnTAs();
+    this.buildBannerOverlay();
+    this.setupInput();
+    this.buildHUDHearts();
+
+    // HUD labels
+    document.getElementById('period-info').textContent = this.period + '교시';
+    const ep = EXIT_POSITIONS[this.period];
+    const exitLabel = ep.row <= 4 ? '[문] 앞쪽 출구!' : ep.row <= 9 ? '[문] 옆쪽 출구' : '[문] 뒷쪽 출구';
+    document.getElementById('exit-info').textContent = exitLabel;
+
+    this.showIntroBanner();
+    this.enterMovePhase(true);
+  }
+
+  // ─── MAP ─────────────────────────────────────────
+  buildMap() {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const t = this.grid[r][c];
+        let key;
+        if      (t === T.WALL)   key = 'wall';
+        else if (t === T.DESK)   key = 'desk';
+        else if (t === T.PPT)    key = 'ppt';
+        else if (t === T.PODIUM) key = 'podium';
+        else if (t === T.EXIT)   key = 'exit';
+        else                     key = ((r + c) % 2 === 0) ? 'floor' : 'floor2';
+        const img = this.add.image(c*TILE + TILE/2, r*TILE + TILE/2, key).setDepth(t === T.DESK ? 4 : 0);
+        if (t === T.EXIT) {
+          img.setDepth(1);
+          this.tweens.add({ targets: img, alpha: 0.7, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+          for (let i = 0; i < 3; i++) {
+            const s = this.add.rectangle(
+              c*TILE + TILE/2 + Phaser.Math.Between(-8,8),
+              r*TILE + TILE/2 + Phaser.Math.Between(-8,8),
+              3, 3, 0xfff8a0
+            ).setDepth(2).setAlpha(0.9);
+            this.tweens.add({ targets: s, y: s.y - 14, alpha: 0, duration: 1200 + i*250, repeat: -1, delay: i*200 });
+          }
+        }
+      }
+    }
+  }
+
+  // ─── NPCs ────────────────────────────────────────
+  spawnNPCs() {
+    this.npcs = [];
+    let friendIdx = -1;
+    if (this.cfg.friend) {
+      friendIdx = Phaser.Math.Between(0, NPC_SEATS.length - 1);
+      this.friendSeat = NPC_SEATS[friendIdx];
+    }
+    for (let i = 0; i < NPC_SEATS.length; i++) {
+      if (i === friendIdx) continue;
+      const [tx, ty] = NPC_SEATS[i];
+      const npc = this.add.image(
+        tx*TILE + TILE/2,
+        ty*TILE + TILE/2 - 2,
+        'npc' + (i % 10)
+      ).setDepth(5);
+      this.tweens.add({
+        targets: npc,
+        y: npc.y + 1,
+        duration: 800 + Math.random()*600,
+        yoyo: true, repeat: -1,
+        ease: 'Sine.easeInOut',
+        delay: Math.random() * 1000,
+      });
+      this.npcs.push(npc);
+    }
+
+    if (this.cfg.friend) {
+      const [fx, fy] = this.friendSeat;
+      this.friendSprite = this.add.image(fx*TILE + TILE/2, fy*TILE + TILE/2 - 2, 'friend').setDepth(5);
+      this.friendSprite.setInteractive({ useHandCursor: true });
+      this.friendSprite.on('pointerdown', (ptr, lx, ly, evt) => {
+        if (evt) evt.stopPropagation();
+        this.tryAskFriend();
+      });
+      this.tweens.add({
+        targets: this.friendSprite,
+        scaleX: 1.06, scaleY: 1.06,
+        duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+      this.friendHint = this.add.text(
+        fx*TILE + TILE/2, fy*TILE - 8, '? 친구',
+        {
+          fontFamily: "'NeoDunggeunmo', sans-serif",
+          fontSize: '16px', color: '#6aa8aa',
+          fontStyle: 'bold',
+        }
+      ).setOrigin(0.5).setDepth(6);
+      this.tweens.add({
+        targets: this.friendHint, y: this.friendHint.y - 4,
+        duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+    }
+  }
+
+  spawnPlayer() {
+    this.player = this.add.image(
+      PLAYER_SEAT[0]*TILE + TILE/2,
+      PLAYER_SEAT[1]*TILE + TILE/2 - 2,
+      'player'
+    ).setDepth(6);
+    this.playerShadow = this.add.ellipse(
+      this.player.x, this.player.y + 13, 18, 6, 0x4a2c1a, 0.32
+    ).setDepth(5.5);
+
+    this.playerArrow = this.add.text(this.player.x, this.player.y - 28, '▼', {
+      fontSize: '22px', color: '#ff3344',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(20);
+    this.time.delayedCall(5000, () => {
+      this.tweens.add({
+        targets: this.playerArrow, alpha: 0, duration: 800,
+        onComplete: () => { if (this.playerArrow) { this.playerArrow.destroy(); this.playerArrow = null; } },
+      });
+    });
+  }
+
+  spawnProfessor() {
+    const px = 14 * TILE + TILE/2;
+    const py = 3  * TILE + TILE/2;
+    this.profPos = { x: px, y: py };
+    this.profShadow = this.add.ellipse(px, py + 14, 22, 7, 0x4a2c1a, 0.36).setDepth(2);
+    this.profSprite = this.add.image(px, py, 'profBack').setDepth(7);
+    this.profBubble = null;
+  }
+
+  // ─── TAs ─────────────────────────────────────────
+  spawnTAs() {
+    this.tas = [];
+    const rows = TA_ROWS[this.period] || [];
+    rows.forEach((row, i) => {
+      const startDir = i % 2 === 0 ? 1 : -1;
+      const startCol = i % 2 === 0 ? 3 + (i * 2) : 16 - (i * 2);
+      const ta = {
+        axis: 'h',
+        row,
+        col: Math.max(1, Math.min(18, startCol)),
+        dir: startDir,
+        speed: 2.5,
+        sprite: null,
+        coneGfx: null,
+        taPaused: false,
+        taPauseIcon: null,
+      };
+      ta.sprite = this.add.image(
+        ta.col * TILE + TILE/2,
+        row * TILE + TILE/2 - 2,
+        'ta'
+      ).setDepth(5.5);
+      ta.sprite.setFlipX(startDir === -1);
+      ta.coneGfx = this.add.graphics().setDepth(5.2);
+      this.tas.push(ta);
+    });
+
+    if (this.period === 4) {
+      const vta = {
+        axis: 'v',
+        row: 2,
+        col: 18,
+        dir: 1,
+        speed: 2.0,
+        patrolMin: 2,
+        patrolMax: 14,
+        sprite: null,
+        coneGfx: null,
+        taPaused: false,
+        taPauseIcon: null,
+      };
+      vta.sprite = this.add.image(
+        18 * TILE + TILE/2,
+        2 * TILE + TILE/2 - 2,
+        'ta'
+      ).setDepth(5.5);
+      vta.sprite.setFlipX(false);
+      vta.coneGfx = this.add.graphics().setDepth(5.2);
+      this.tas.push(vta);
+    }
+
+    // Period 5: static exit-blocking TA — permanently covers the exit approach
+    // Exit is at row 3, col 18. This TA sits at col 15 row 3 facing right,
+    // detection cone covers cols 15.5–18.5 so reaching col 18 is impossible without pause.
+    if (this.period === 5) {
+      const blocker = {
+        axis: 'h',
+        row: 3,
+        col: 15,
+        dir: 1,
+        speed: 0,
+        exitBlocker: true,
+        sprite: null,
+        coneGfx: null,
+        taPaused: false,
+        taPauseIcon: null,
+      };
+      blocker.sprite = this.add.image(
+        15 * TILE + TILE/2,
+        3 * TILE + TILE/2 - 2,
+        'ta'
+      ).setDepth(5.5);
+      blocker.sprite.setFlipX(false);
+      blocker.coneGfx = this.add.graphics().setDepth(5.2);
+      this.tas.push(blocker);
+    }
+  }
+
+  // ─── BANNER ──────────────────────────────────────
+  buildBannerOverlay() {
+    this.bannerBg = this.add.rectangle(W/2, 90, 280, 70, 0xffffff, 0.0)
+      .setDepth(20).setStrokeStyle(4, 0xffffff, 0.0);
+    this.bannerText = this.add.text(W/2, 90, '', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '46px', color: '#ffffff',
+      stroke: '#000000', strokeThickness: 5, fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(21).setAlpha(0);
+
+    this.introTextObj = this.add.text(W/2, H/2, '', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '38px', color: '#fff8e0',
+      stroke: '#5a3a1a', strokeThickness: 5,
+    }).setOrigin(0.5).setDepth(25).setAlpha(0);
+  }
+
+  showIntroBanner() {
+    this.introTextObj.setText(this.cfg.label);
+    this.introTextObj.setAlpha(0);
+    this.tweens.add({
+      targets: this.introTextObj,
+      alpha: 1, duration: 350,
+      onComplete: () => {
+        this.time.delayedCall(900, () => {
+          this.tweens.add({ targets: this.introTextObj, alpha: 0, duration: 400 });
+        });
+      },
+    });
+  }
+
+  showBigBanner(text, color, bgColor) {
+    this.bannerText.setText(text);
+    this.bannerText.setColor(color);
+    this.bannerBg.setFillStyle(bgColor, 0.85);
+    this.bannerBg.setStrokeStyle(4, color, 1);
+    this.bannerBg.setAlpha(0);
+    this.bannerText.setAlpha(0);
+    this.bannerBg.setScale(0.7);
+    this.bannerText.setScale(0.7);
+    this.tweens.add({
+      targets: [this.bannerBg, this.bannerText],
+      alpha: 1, scale: 1, duration: 220, ease: 'Back.easeOut',
+    });
+    this.time.delayedCall(850, () => {
+      this.tweens.add({
+        targets: [this.bannerBg, this.bannerText],
+        alpha: 0, duration: 350,
+      });
+    });
+  }
+
+  // ─── PIXEL HEART HUD ─────────────────────────────
+  buildHUDHearts() {
+    if (!this.cfg.friend) return;
+    this.heartGfx = this.add.graphics().setDepth(15);
+    this.heartLabel = this.add.text(10, H - 30, 'Friend Help', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '10px', color: '#3a1f0a',
+    }).setOrigin(0, 0).setDepth(15);
+    this.updateHUDHearts();
+  }
+
+  updateHUDHearts() {
+    if (!this.heartGfx) return;
+    this.heartGfx.clear();
+    const used = this.friendUsedThisPeriod;
+    const color = used ? 0x888888 : 0xc44545;
+    drawPixelHeart(this.heartGfx, 96, H - 27, color, 2);
+  }
+
+  // ─── INPUT ───────────────────────────────────────
+  setupInput() {
+    this.input.on('pointerdown', (ptr) => {
+      if (this.isDead || this.hasWon) return;
+      if (!this.canMove && !this.inGrace) {
+        this.triggerGameOver('move');
+        return;
+      }
+      if (!this.canMove && this.inGrace) return;
+      this.isDragging = true;
+      this.dragPath = [];
+      this.lastDragTile = { x: this.playerTileX, y: this.playerTileY };
+      this.processDrag(ptr.x, ptr.y);
+    });
+    this.input.on('pointermove', (ptr) => {
+      if (!this.isDragging || this.isDead || this.hasWon) return;
+      if (!this.canMove) {
+        if (!this.inGrace) {
+          this.dragPath = [];
+          this.isDragging = false;
+          this.triggerGameOver('move');
+        }
+        return;
+      }
+      this.processDrag(ptr.x, ptr.y);
+    });
+    this.input.on('pointerup', () => { this.isDragging = false; });
+  }
+
+  processDrag(px, py) {
+    const tx = Math.floor(px / TILE);
+    const ty = Math.floor(py / TILE);
+    if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return;
+    const cell = this.grid[ty][tx];
+    if (cell === T.WALL || cell === T.DESK || cell === T.PPT || cell === T.PODIUM) return;
+    const last = this.lastDragTile;
+    if (tx === last.x && ty === last.y) return;
+    const pts = this.tileLine(last.x, last.y, tx, ty);
+    for (const pt of pts) {
+      const c = this.grid[pt.y][pt.x];
+      if (c === T.WALL || c === T.DESK || c === T.PPT || c === T.PODIUM) break;
+      const prev = this.dragPath.length > 0
+        ? this.dragPath[this.dragPath.length - 1]
+        : { x: this.playerTileX, y: this.playerTileY };
+      if (pt.x !== prev.x || pt.y !== prev.y) this.dragPath.push({ x: pt.x, y: pt.y });
+    }
+    this.lastDragTile = { x: tx, y: ty };
+  }
+
+  tileLine(x0, y0, x1, y1) {
+    const pts = [];
+    let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+    let sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+    while (true) {
+      pts.push({ x: x0, y: y0 });
+      if (x0 === x1 && y0 === y1) break;
+      const e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x0 += sx; }
+      if (e2 <  dx) { err += dx; y0 += sy; }
+    }
+    return pts;
+  }
+
+  // ─── PHASE MANAGEMENT ────────────────────────────
+  enterMovePhase(initial = false) {
+    this.phase = 'move';
+    this.phaseTotal = this.cfg.moveTime;
+    this.phaseTimer = 0;
+    this.canMove = true;
+    this.profLooking = false;
+    this.inGrace = false;
+    this.graceTimer = 0;
+
+    this.profSprite.setTexture('profBack').setDisplaySize(TILE, TILE);
+    this.setPhaseUI('move');
+    this.removeProfBubble();
+    if (!initial) {
+      this.showBigBanner('MOVE!', '#ffffff', 0x4a8a3a);
+    }
+  }
+
+  enterStopPhase(suspicion = false) {
+    this.phase = suspicion ? 'suspicion' : 'stop';
+    this.phaseTotal = suspicion ? this.cfg.stopTime * 1.5 : this.cfg.stopTime;
+    this.phaseTimer = 0;
+    this.inGrace = true;
+    this.graceTimer = 0;
+    this.canMove = false;
+    this.profLooking = true;
+
+    this.profSprite.setTexture(suspicion ? 'profAngry' : 'professorPNG').setDisplaySize(TILE, TILE);
+    this.setPhaseUI(suspicion ? 'suspicion' : 'stop');
+    this.showBigBanner('STOP!', '#ffffff', 0xc44545);
+
+    if (suspicion) {
+      const line = SUSPICION_LINES[Phaser.Math.Between(0, SUSPICION_LINES.length - 1)];
+      this.showProfBubble(line, 0xc44545);
+      this.cameras.main.flash(250, 200, 40, 40, false);
+    } else {
+      // WATCH mode — professor faces class
+      const line = WATCH_LINES[Phaser.Math.Between(0, WATCH_LINES.length - 1)];
+      this.showProfBubble(line, 0x4a6fa5, 2800);
+    }
+  }
+
+  enterDistractPhase() {
+    this.phase = 'distract';
+    this.phaseTotal = this.cfg.moveTime * 1.4;
+    this.phaseTimer = 0;
+    this.canMove = true;
+    this.profLooking = false;
+    this.inGrace = false;
+
+    this.profSprite.setTexture('professorPNG').setDisplaySize(TILE, TILE);
+    this.profSprite.setFlipX(false);
+    this.setPhaseUI('distract');
+    this.showBigBanner('CHANCE!', '#ffffff', 0xe8a445);
+
+    const ans = PROF_ANSWERS[Phaser.Math.Between(0, PROF_ANSWERS.length - 1)];
+    this.showProfBubble(ans, 0xe8a445);
+  }
+
+  setPhaseUI(phase) {
+    const el = document.getElementById('phase-indicator');
+    el.classList.remove('stop', 'distract', 'suspicion');
+    if (phase === 'move') {
+      el.textContent = '[보드] 칠판 보는 중 — MOVE';
+    } else if (phase === 'stop') {
+      el.textContent = '[감시] 학생 보는 중 — STOP!';
+      el.classList.add('stop');
+    } else if (phase === 'distract') {
+      el.textContent = '[질문] 친구 질문 중 — MOVE!';
+      el.classList.add('distract');
+    } else if (phase === 'suspicion') {
+      el.textContent = '[의심] 의심 중 — 절대 멈춰!';
+      el.classList.add('suspicion');
+    }
+  }
+
+  showProfBubble(text, borderColor, autoDismissMs) {
+    this.removeProfBubble();
+    const BORDER = 0x3a1f0a;
+    const CREAM  = 0xfff8e0;
+    const bw = 224, bh = 62;
+    const border = 5;
+    // Position bubble above professor's head
+    // profPos.y ≈ 112; head is ~24px above center → place bubble 76px above center
+    const bx = this.profPos.x;
+    const by = this.profPos.y - 76 - bh / 2;
+    const bubble = this.add.container(bx, by).setDepth(22);
+    const g = this.add.graphics();
+
+    // Pixel border rect (dark brown)
+    g.fillStyle(BORDER);
+    g.fillRect(-bw/2, -bh/2, bw, bh);
+    // Cream fill inside border
+    g.fillStyle(CREAM);
+    g.fillRect(-bw/2 + border, -bh/2 + border, bw - border*2, bh - border*2);
+
+    // Tail: downward-pointing triangle at bottom-center, pointing toward prof head
+    const tailW = 14, tailH = 16;
+    const tailX = 0, tailY = bh / 2;
+    // Border triangle (dark)
+    g.fillStyle(BORDER);
+    g.fillTriangle(tailX - tailW/2 - 1, tailY, tailX + tailW/2 + 1, tailY, tailX, tailY + tailH + 2);
+    // Cream fill triangle (slightly inset)
+    g.fillStyle(CREAM);
+    g.fillTriangle(tailX - tailW/2 + border - 2, tailY - 1, tailX + tailW/2 - border + 2, tailY - 1, tailX, tailY + tailH - 3);
+
+    const txt = this.add.text(0, -1, text, {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '13px',
+      color: '#3a1f0a',
+      align: 'center',
+      wordWrap: { width: bw - border*2 - 12 },
+    }).setOrigin(0.5);
+
+    bubble.add([g, txt]);
+    bubble.setScale(0.6);
+    this.tweens.add({ targets: bubble, scale: 1, duration: 200, ease: 'Back.easeOut' });
+    this.profBubble = bubble;
+
+    if (autoDismissMs) {
+      this.time.delayedCall(autoDismissMs, () => this.removeProfBubble());
+    }
+  }
+
+  removeProfBubble() {
+    if (this.profBubble) { this.profBubble.destroy(); this.profBubble = null; }
+  }
+
+  // ─── FRIEND INTERACTION ──────────────────────────
+  tryAskFriend() {
+    if (!this.cfg.friend) return;
+    if (this.isDead || this.hasWon) return;
+    if (this.friendUsedThisPeriod) return;
+    if (this.phase !== 'move') return;
+
+    this.friendUsedThisPeriod = true;
+    this.updateHUDHearts();
+
+    this.friendSprite.setTexture('friendHand');
+    if (this.friendHint) this.friendHint.setVisible(false);
+
+    // Pause TAs for 4 seconds — all TAs including exit-blocker
+    const pausedTAs = this.tas;
+    pausedTAs.forEach(ta => {
+      ta.taPaused = true;
+      ta.taPauseIcon = this.add.text(ta.sprite.x, ta.sprite.y - 20, '⏸', {
+        fontSize: '14px', color: '#ffffff',
+        stroke: '#333333', strokeThickness: 2,
+      }).setDepth(7).setOrigin(0.5);
+    });
+    this.time.delayedCall(4000, () => {
+      pausedTAs.forEach(ta => {
+        ta.taPaused = false;
+        if (ta.taPauseIcon) { ta.taPauseIcon.destroy(); ta.taPauseIcon = null; }
+      });
+    });
+
+    const q = FRIEND_QUESTIONS[Phaser.Math.Between(0, FRIEND_QUESTIONS.length - 1)];
+    this.showFriendBubble(q);
+
+    this.time.delayedCall(450, () => {
+      if (!this.isDead && !this.hasWon) this.enterDistractPhase();
+    });
+  }
+
+  showFriendBubble(text) {
+    const fs = this.friendSeat || FRIEND_SEAT;
+    const fx = fs[0] * TILE + TILE/2;
+    const baseY = fs[1] * TILE - 12;
+    const fy = fs[1] <= 7 ? fs[1] * TILE + TILE + 12 : baseY;
+    const bubble = this.add.container(fx, fy).setDepth(22);
+    const bg = this.add.rectangle(0, 0, 180, 30, 0xeaffea, 1)
+      .setStrokeStyle(2, 0x6aa8aa);
+    const txt = this.add.text(0, 0, text, {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '12px', color: '#2a4a4a', align: 'center',
+      wordWrap: { width: 165 },
+    }).setOrigin(0.5);
+    bubble.add([bg, txt]);
+    bubble.setScale(0.7);
+    this.tweens.add({ targets: bubble, scale: 1, duration: 220, ease: 'Back.easeOut' });
+    this.time.delayedCall(2200, () => {
+      this.tweens.add({ targets: bubble, alpha: 0, duration: 350, onComplete: () => bubble.destroy() });
+    });
+  }
+
+  // ─── TA UPDATE ───────────────────────────────────
+  updateTAs(dt) {
+    if (!this.tas || this.tas.length === 0) return;
+    const range = 3 * TILE;
+    const halfH = 1.0 * TILE;
+
+    for (const ta of this.tas) {
+      let sx, sy;
+      if (ta.axis === 'v') {
+        // Vertical patrol
+        if (!ta.taPaused) {
+          ta.row += ta.dir * ta.speed * dt;
+          if (ta.row >= ta.patrolMax) { ta.row = ta.patrolMax; ta.dir = -1; }
+          if (ta.row <= ta.patrolMin) { ta.row = ta.patrolMin; ta.dir =  1; }
+        }
+        sx = ta.col * TILE + TILE/2;
+        sy = ta.row * TILE + TILE/2 - 2;
+        ta.sprite.x = sx;
+        ta.sprite.y = sy;
+        ta.sprite.setFlipX(false);
+        ta.sprite.setAlpha(ta.taPaused ? 0.5 : 1);
+
+        ta.coneGfx.clear();
+        ta.coneGfx.fillStyle(ta.taPaused ? 0x888888 : 0xffee00, ta.taPaused ? 0.12 : 0.28);
+        if (ta.dir === 1) {
+          ta.coneGfx.fillTriangle(sx, sy, sx - halfH, sy + range, sx + halfH, sy + range);
+        } else {
+          ta.coneGfx.fillTriangle(sx, sy, sx - halfH, sy - range, sx + halfH, sy - range);
+        }
+
+        if (!ta.taPaused && !this.isDead && !this.hasWon) {
+          const px = this.player.x, py = this.player.y;
+          const inCone = ta.dir === 1
+            ? py > sy && py < sy + range && px > sx - halfH && px < sx + halfH
+            : py < sy && py > sy - range && px > sx - halfH && px < sx + halfH;
+          if (inCone) { this.triggerGameOver('ta'); return; }
+        }
+      } else {
+        // Horizontal patrol
+        if (!ta.taPaused) {
+          ta.col += ta.dir * ta.speed * dt;
+          if (ta.col >= 18) { ta.col = 18; ta.dir = -1; }
+          if (ta.col <= 1)  { ta.col = 1;  ta.dir =  1; }
+        }
+        sx = ta.col * TILE + TILE/2;
+        sy = ta.row * TILE + TILE/2 - 2;
+        ta.sprite.x = sx;
+        ta.sprite.setFlipX(ta.dir === -1);
+        ta.sprite.setAlpha(ta.taPaused ? 0.5 : 1);
+
+        ta.coneGfx.clear();
+        ta.coneGfx.fillStyle(ta.taPaused ? 0x888888 : 0xffee00, ta.taPaused ? 0.12 : 0.28);
+        if (ta.dir === 1) {
+          ta.coneGfx.fillTriangle(sx, sy, sx + range, sy - halfH, sx + range, sy + halfH);
+        } else {
+          ta.coneGfx.fillTriangle(sx, sy, sx - range, sy - halfH, sx - range, sy + halfH);
+        }
+
+        if (!ta.taPaused && !this.isDead && !this.hasWon) {
+          const px = this.player.x, py = this.player.y;
+          const inCone = ta.dir === 1
+            ? px > sx && px < sx + range && py > sy - halfH && py < sy + halfH
+            : px < sx && px > sx - range && py > sy - halfH && py < sy + halfH;
+          if (inCone) { this.triggerGameOver('ta'); return; }
+        }
+      }
+    }
+  }
+
+  // ─── EXIT PROXIMITY DIALOGUE ─────────────────────
+  checkExitProximity() {
+    if (this.isDead || this.hasWon) return;
+    const ep = EXIT_POSITIONS[this.period];
+    const dist = Math.abs(this.playerTileX - ep.col) + Math.abs(this.playerTileY - ep.row);
+    if (dist <= 3 && !this.exitProximityShown) {
+      this.exitProximityShown = true;
+      const line = EXIT_PROXIMITY_LINES[Phaser.Math.Between(0, EXIT_PROXIMITY_LINES.length - 1)];
+      this.showProfBubble(line, 0xe8a445, 2500);
+    } else if (dist > 6) {
+      this.exitProximityShown = false;
+    }
+  }
+
+  // ─── UPDATE LOOP ─────────────────────────────────
+  update(time, delta) {
+    if (this.isDead || this.hasWon) return;
+    const dt = delta / 1000;
+
+    this.bobTick += dt;
+    this.updatePhaseTimer(dt);
+    this.updateGrace(dt);
+    this.updatePlayerMovement(dt);
+    this.updateProfBob();
+    this.updateTAs(dt);
+    this.checkExitCollision();
+    this.checkExitProximity();
+    if (this.playerArrow) {
+      this.playerArrow.setPosition(
+        this.player.x,
+        this.player.y - 28 + Math.sin(this.bobTick * 6) * 3
+      );
+    }
+  }
+
+  updateGrace(dt) {
+    if (!this.inGrace) return;
+    this.graceTimer += dt;
+    if (this.graceTimer >= this.gracePeriod) {
+      this.inGrace = false;
+      if (this.dragPath.length > 0 || this.playerMoving) {
+        this.triggerGameOver('move');
+      }
+    }
+  }
+
+  updatePhaseTimer(dt) {
+    this.phaseTimer += dt;
+    if (this.phaseTimer >= this.phaseTotal) {
+      if (this.phase === 'move') {
+        const isSusp = this.cfg.suspChance > 0 && Math.random() < this.cfg.suspChance;
+        this.enterStopPhase(isSusp);
+      } else if (this.phase === 'stop' || this.phase === 'suspicion') {
+        this.enterMovePhase();
+      } else if (this.phase === 'distract') {
+        this.enterStopPhase(false);
+      }
+    }
+  }
+
+  updatePlayerMovement(dt) {
+    if (this.dragPath.length === 0) {
+      this.playerMoving = false;
+    } else {
+      const next = this.dragPath[0];
+      const tx = next.x * TILE + TILE/2;
+      const ty = next.y * TILE + TILE/2 - 2;
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, tx, ty);
+      const SPEED = 170;
+      if (dist < 3) {
+        this.player.x = tx; this.player.y = ty;
+        this.playerTileX = next.x; this.playerTileY = next.y;
+        this.dragPath.shift();
+        this.playerMoving = false;
+      } else {
+        const ang = Phaser.Math.Angle.Between(this.player.x, this.player.y, tx, ty);
+        this.player.x += Math.cos(ang) * SPEED * dt;
+        this.player.y += Math.sin(ang) * SPEED * dt;
+        this.player.setFlipX(tx < this.player.x);
+        this.playerMoving = true;
+      }
+    }
+    if (this.playerMoving) {
+      this.player.y += Math.sin(this.bobTick * 11) * 0.6;
+    }
+    this.playerShadow.setPosition(this.player.x, this.player.y + 13);
+  }
+
+  updateProfBob() {
+    const px = this.profPos.x;
+    const py = this.profPos.y;
+    if (this.phase === 'move') {
+      this.profSprite.x = px + Math.sin(this.bobTick * 3) * 1.5;
+      this.profSprite.y = py + Math.abs(Math.sin(this.bobTick * 4)) * 2;
+    } else {
+      this.profSprite.x = px;
+      this.profSprite.y = py + Math.sin(this.bobTick * 2) * 1;
+    }
+    this.profShadow.setPosition(this.profSprite.x, py + 14);
+  }
+
+  checkExitCollision() {
+    const tx = Math.floor(this.player.x / TILE);
+    const ty = Math.floor(this.player.y / TILE);
+    if (ty >= 0 && ty < ROWS && tx >= 0 && tx < COLS && this.grid[ty][tx] === T.EXIT) {
+      this.triggerWin();
+    }
+  }
+
+  // ─── GAME OVER / WIN ─────────────────────────────
+  triggerGameOver(reason) {
+    if (this.isDead) return;
+    this.isDead = true;
+    this.canMove = false;
+
+    this.cameras.main.shake(300, 0.018);
+    this.cameras.main.flash(500, 220, 80, 80, false);
+
+    const overlay = this.add.rectangle(W/2, H/2, W, H, 0x4a2c1a, 0).setDepth(30);
+    this.tweens.add({ targets: overlay, alpha: 0.55, duration: 400 });
+
+    const msg = CAUGHT_LINES[Phaser.Math.Between(0, CAUGHT_LINES.length - 1)];
+    const taMsg = reason === 'ta' ? '조교에게 발각됐다!' : null;
+
+    this.add.rectangle(W/2, H/2, 420, 230, 0xfff8e0, 0.98)
+      .setDepth(31).setStrokeStyle(4, 0xc44545);
+    this.add.rectangle(W/2, H/2, 410, 220, 0x000000, 0)
+      .setDepth(31).setStrokeStyle(1, 0x8b5a2b);
+
+    this.add.text(W/2, H/2 - 75, taMsg || msg[0], {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '46px', color: '#c44545',
+      stroke: '#fff8e0', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(32);
+
+    this.add.text(W/2, H/2 - 22, taMsg ? '시야 안에 들어갔다...' : msg[1], {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '20px', color: '#5a3a1a',
+    }).setOrigin(0.5).setDepth(32);
+
+    this.add.text(W/2, H/2 + 12, this.period + '교시 실패', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '15px', color: '#8b5a2b',
+    }).setOrigin(0.5).setDepth(32);
+
+    const retry = this.add.rectangle(W/2 - 70, H/2 + 75, 170, 42, 0xc44545)
+      .setDepth(32).setStrokeStyle(3, 0x8b2c2c);
+    this.add.text(W/2 - 70, H/2 + 75, '다시 도전', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '20px', color: '#fff8e0', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(33);
+    retry.setInteractive({ useHandCursor: true });
+    retry.on('pointerover', () => retry.setFillStyle(0xe05858));
+    retry.on('pointerout',  () => retry.setFillStyle(0xc44545));
+    retry.on('pointerdown', () => {
+      this.cameras.main.fadeOut(300, 245, 230, 200);
+      this.time.delayedCall(300, () => this.scene.restart({ period: this.period }));
+    });
+
+    const titleBtn = this.add.rectangle(W/2 + 100, H/2 + 75, 130, 42, 0xa87042)
+      .setDepth(32).setStrokeStyle(3, 0x6b4423);
+    this.add.text(W/2 + 100, H/2 + 75, '제목으로', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '17px', color: '#fff8e0', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(33);
+    titleBtn.setInteractive({ useHandCursor: true });
+    titleBtn.on('pointerover', () => titleBtn.setFillStyle(0xc9a778));
+    titleBtn.on('pointerout',  () => titleBtn.setFillStyle(0xa87042));
+    titleBtn.on('pointerdown', () => {
+      this.cameras.main.fadeOut(300, 245, 230, 200);
+      this.time.delayedCall(300, () => this.scene.start('TitleScene'));
+    });
+  }
+
+  triggerWin() {
+    if (this.hasWon) return;
+    this.hasWon = true;
+    this.canMove = false;
+
+    if (this.period >= 5) { this.playFTwistEnding(); return; }
+
+    this.cameras.main.flash(700, 240, 220, 180, false);
+
+    const overlay = this.add.rectangle(W/2, H/2, W, H, 0x6ba85a, 0).setDepth(30);
+    this.tweens.add({ targets: overlay, alpha: 0.22, duration: 400 });
+
+    const isLast = this.period >= 5;
+    const lines  = WIN_LINES[this.period] || ['클리어!', ''];
+
+    this.add.rectangle(W/2, H/2, 440, 230, 0xfff8e0, 0.98)
+      .setDepth(31).setStrokeStyle(4, 0x6ba85a);
+    this.add.rectangle(W/2, H/2, 430, 220, 0x000000, 0)
+      .setDepth(31).setStrokeStyle(1, 0x4a7a3a);
+
+    this.add.text(W/2, H/2 - 75, lines[0], {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '46px', color: '#4a7a3a',
+      stroke: '#fff8e0', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(32);
+
+    this.add.text(W/2, H/2 - 22, lines[1], {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '18px', color: '#5a3a1a', align: 'center',
+      wordWrap: { width: 380 },
+    }).setOrigin(0.5).setDepth(32);
+
+    this.add.text(W/2, H/2 + 15,
+      isLast ? '* 모든 강의 탈출 성공! *' : (this.period + '교시 → ' + (this.period + 1) + '교시'), {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '16px', color: '#6b4423',
+    }).setOrigin(0.5).setDepth(32);
+
+    const nextBtn = this.add.rectangle(W/2, H/2 + 78, 250, 44, 0x6ba85a)
+      .setDepth(32).setStrokeStyle(3, 0x4a7a3a);
+    this.add.text(W/2, H/2 + 78, isLast ? '처음으로' : '다음 교시로', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '22px', color: '#fff8e0', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(33);
+    nextBtn.setInteractive({ useHandCursor: true });
+    nextBtn.on('pointerover', () => nextBtn.setFillStyle(0x88c878));
+    nextBtn.on('pointerout',  () => nextBtn.setFillStyle(0x6ba85a));
+    nextBtn.on('pointerdown', () => {
+      this.cameras.main.fadeOut(400, 245, 230, 200);
+      if (isLast) {
+        this.time.delayedCall(400, () => this.scene.start('TitleScene'));
+      } else {
+        this.time.delayedCall(400, () => this.scene.start('GameScene', { period: this.period + 1 }));
+      }
+    });
+
+    const confettiColors = [0x6ba85a, 0xe8a445, 0xc44545, 0x4a6fa5, 0xfff8e0];
+    for (let i = 0; i < 28; i++) {
+      const dot = this.add.rectangle(
+        Phaser.Math.Between(60, W - 60),
+        Phaser.Math.Between(40, H - 100),
+        4, 4,
+        confettiColors[i % confettiColors.length]
+      ).setDepth(34).setAlpha(0.9);
+      this.tweens.add({
+        targets: dot,
+        y: dot.y - Phaser.Math.Between(60, 160),
+        alpha: 0,
+        duration: 1400 + i * 50,
+        delay: i * 30,
+        ease: 'Quad.easeOut',
+      });
+    }
+  }
+
+  // ─── F TWIST ENDING (period 5 only) ──────────────
+  playFTwistEnding() {
+    // Phase A — 폭죽 (0–2s)
+    this.cameras.main.flash(700, 240, 220, 180, false);
+    const clearTxt = this.add.text(W/2, H/2 - 20, '자유다!', {
+      fontFamily: "'NeoDunggeunmo', sans-serif",
+      fontSize: '46px', color: '#4a7a3a',
+      stroke: '#fff8e0', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(32).setAlpha(0);
+    this.tweens.add({ targets: clearTxt, alpha: 1, duration: 300 });
+    const cColors = [0x6ba85a, 0xe8a445, 0xc44545, 0x4a6fa5, 0xfff8e0];
+    for (let i = 0; i < 28; i++) {
+      const dot = this.add.rectangle(
+        Phaser.Math.Between(60, W - 60), Phaser.Math.Between(40, H - 100),
+        4, 4, cColors[i % cColors.length]
+      ).setDepth(34).setAlpha(0.9);
+      this.tweens.add({ targets: dot, y: dot.y - Phaser.Math.Between(60, 160), alpha: 0,
+        duration: 1400 + i * 50, delay: i * 30, ease: 'Quad.easeOut' });
+    }
+
+    // Phase B — 정적 (fade "자유다!" at 1.6s)
+    this.time.delayedCall(1600, () => {
+      this.tweens.add({ targets: clearTxt, alpha: 0, duration: 400 });
+    });
+
+    // Phase C — 교수 "F입니다." (3s)
+    this.time.delayedCall(3000, () => {
+      this.removeProfBubble();
+      this.profSprite.setTexture('professorPNG').setDisplaySize(TILE, TILE);
+      const RED = 0xcc2244, CREAM = 0xfff8e0, BDR = 0x3a1f0a;
+      const bw = 224, bh = 62, b = 5;
+      const bx = this.profPos.x;
+      const by = Math.max(bh / 2 + 4, this.profPos.y - 76 - bh / 2);
+      const bubble = this.add.container(bx, by).setDepth(35);
+      const g = this.add.graphics();
+      g.fillStyle(RED);  g.fillRect(-bw/2, -bh/2, bw, bh);
+      g.fillStyle(CREAM); g.fillRect(-bw/2 + b, -bh/2 + b, bw - b*2, bh - b*2);
+      g.fillStyle(RED);  g.fillTriangle(-bw/2 + 60, bh/2, -bw/2 + 88, bh/2, -bw/2 + 74, bh/2 + 16);
+      g.fillStyle(CREAM); g.fillTriangle(-bw/2 + 63, bh/2 - 1, -bw/2 + 85, bh/2 - 1, -bw/2 + 74, bh/2 + 11);
+      const ft = this.add.text(0, -1, 'F입니다.', {
+        fontFamily: "'NeoDunggeunmo', sans-serif",
+        fontSize: '18px', color: '#cc2244', align: 'center',
+        stroke: '#fff0f0', strokeThickness: 2,
+      }).setOrigin(0.5);
+      bubble.add([g, ft]);
+      bubble.setScale(0.6);
+      this.tweens.add({ targets: bubble, scale: 1, duration: 220, ease: 'Back.easeOut' });
+      this.time.delayedCall(400, () => {
+        this.tweens.add({ targets: bubble, x: bx + 5, duration: 60, yoyo: true, repeat: 4, ease: 'Linear' });
+      });
+    });
+
+    // Phase D — F 딱지 스티커 (4.5s)
+    this.time.delayedCall(4500, () => {
+      const stickerSize = Math.min(W, H) * 0.55;
+      const radius = stickerSize / 2;
+      // positioned at center so setScale scales from center
+      const stickerGfx = this.add.graphics({ x: W/2, y: H/2 }).setDepth(40);
+      // shadow
+      stickerGfx.fillStyle(0x000000, 0.45);
+      stickerGfx.fillCircle(7, 9, radius + 6);
+      // thick black border
+      stickerGfx.fillStyle(0x000000, 1);
+      stickerGfx.fillCircle(0, 0, radius + 7);
+      // white label background
+      stickerGfx.fillStyle(0xffffff, 1);
+      stickerGfx.fillCircle(0, 0, radius);
+      stickerGfx.setScale(4.5).setAngle(-15);
+
+      const fontSize = Math.round(stickerSize * 0.82);
+      const fStamp = this.add.text(W/2, H/2, 'F', {
+        fontFamily: "'NeoDunggeunmo', sans-serif",
+        fontSize: `${fontSize}px`, color: '#cc2244',
+        stroke: '#000000', strokeThickness: 10,
+      }).setOrigin(0.5).setDepth(41).setScale(4.5).setAngle(-15);
+
+      // scale in from 4.5x → 1x with Back.easeOut
+      this.tweens.add({
+        targets: [stickerGfx, fStamp],
+        scale: 1, angle: -10,
+        duration: 400, ease: 'Back.easeOut',
+      });
+      // camera shake after stamp lands
+      this.time.delayedCall(200, () => {
+        this.cameras.main.shake(400, 0.02);
+      });
+      // white flash on stamp hit
+      this.cameras.main.flash(80, 255, 255, 255, false);
+    });
+
+    // Phase E — 플레이어 "안돼에에에에" (6.5s)
+    this.time.delayedCall(6500, () => {
+      const CREAM = 0xfff8e0, BDR2 = 0x3a1f0a;
+      const bw2 = 220, bh2 = 58, b2 = 5;
+      const rawX = this.player ? this.player.x : W / 2;
+      const rawY = this.player ? this.player.y : H / 2;
+      const px = Math.max(bw2 / 2 + 10, Math.min(W - bw2 / 2 - 10, rawX));
+      const py = Math.max(bh2 / 2 + 10, rawY - 50);
+      const pb = this.add.container(px, py).setDepth(42);
+      const g2 = this.add.graphics();
+      g2.fillStyle(BDR2); g2.fillRect(-bw2/2, -bh2/2, bw2, bh2);
+      g2.fillStyle(CREAM); g2.fillRect(-bw2/2 + b2, -bh2/2 + b2, bw2 - b2*2, bh2 - b2*2);
+      g2.fillStyle(BDR2); g2.fillTriangle(-14/2 - 1, bh2/2, 14/2 + 1, bh2/2, 0, bh2/2 + 18);
+      g2.fillStyle(CREAM); g2.fillTriangle(-14/2 + b2 - 2, bh2/2 - 1, 14/2 - b2 + 2, bh2/2 - 1, 0, bh2/2 + 13);
+      const pt = this.add.text(0, -1, '안돼에에에에', {
+        fontFamily: "'NeoDunggeunmo', sans-serif",
+        fontSize: '16px', color: '#3a1f0a', align: 'center',
+      }).setOrigin(0.5);
+      pb.add([g2, pt]);
+      pb.setScale(0.6);
+      this.tweens.add({ targets: pb, scale: 1, duration: 220, ease: 'Back.easeOut' });
+      this.time.delayedCall(300, () => {
+        this.tweens.add({ targets: pb, x: px + 5, duration: 80, yoyo: true, repeat: 6, ease: 'Linear' });
+      });
+    });
+
+    // Phase F — 페이드 아웃 + 마무리 (8.5s)
+    this.time.delayedCall(8500, () => {
+      const fadeRect = this.add.rectangle(W/2, H/2, W, H, 0x000000).setDepth(50).setAlpha(0);
+      this.tweens.add({ targets: fadeRect, alpha: 1, duration: 2000, ease: 'Linear' });
+      this.time.delayedCall(1200, () => {
+        const et = this.add.text(W/2, H/2 - 18, '다음 학기에 만나요', {
+          fontFamily: "'NeoDunggeunmo', sans-serif",
+          fontSize: '20px', color: '#ffffff',
+        }).setOrigin(0.5).setDepth(51).setAlpha(0);
+        this.tweens.add({ targets: et, alpha: 1, duration: 800 });
+        const ch = this.add.text(W/2, H/2 + 20, '[ 클릭하여 처음으로 ]', {
+          fontFamily: "'NeoDunggeunmo', sans-serif",
+          fontSize: '13px', color: '#999999',
+        }).setOrigin(0.5).setDepth(51).setAlpha(0);
+        this.tweens.add({ targets: ch, alpha: 1, duration: 800, delay: 500 });
+      });
+      this.time.delayedCall(2200, () => {
+        this.input.once('pointerdown', () => {
+          this.cameras.main.fadeOut(400, 0, 0, 0);
+          this.time.delayedCall(400, () => this.scene.start('TitleScene'));
+        });
+      });
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// GAME CONFIG
+// ════════════════════════════════════════════════════════
+const config = {
+  type: Phaser.AUTO,
+  width: W, height: H,
+  backgroundColor: '#f5ebd6',
+  parent: 'game-container',
+  pixelArt: true,
+  scene: [TitleScene, GameScene],
+  render: { antialias: false, roundPixels: true },
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+};
+document.fonts.load("16px 'NeoDunggeunmo'").then(() => {
+  window._phaserGame = new Phaser.Game(config);
+});
+
+window.__startPeriod = (n) => {
+  const game = window._phaserGame;
+  if (!game) { console.warn('__startPeriod: game not ready'); return; }
+  game.scene.stop('TitleScene');
+  game.scene.stop('GameScene');
+  game.scene.start('GameScene', { period: n });
+};
+
+window.__triggerEnding = () => {
+  const game = window._phaserGame;
+  if (!game) { console.warn('__triggerEnding: game not ready'); return; }
+  const gs = game.scene.getScene('GameScene');
+  if (gs && gs.sys.isActive() && !gs.hasWon) {
+    gs.hasWon = true;
+    gs.canMove = false;
+    gs.playFTwistEnding();
+  } else {
+    game.scene.stop('TitleScene');
+    game.scene.start('GameScene', { period: 5 });
+    const wait = () => {
+      const s = game.scene.getScene('GameScene');
+      if (s && s.sys.isActive() && s.period === 5) {
+        s.hasWon = true; s.canMove = false; s.playFTwistEnding();
+      } else { setTimeout(wait, 100); }
+    };
+    setTimeout(wait, 600);
+  }
+};
+</script>
+</body>
+</html>
